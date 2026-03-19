@@ -13,7 +13,6 @@ from utils import (
     estimate_carbon_offset,
     validate_product_data,
     format_impact_summary,
-    MATERIAL_CARBON_FACTORS,
 )
 
 

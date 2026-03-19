@@ -50,16 +50,14 @@ def calculate_eco_score(
     Each input score should be between 0 and 10.
     Returns a weighted score between 0 and 10.
     """
-    if not all(0 <= s <= 10 for s in [material_score, carbon_score,
-                                       durability_score, recyclability_score]):
+    scores = [material_score, carbon_score, durability_score, recyclability_score]
+    if not all(0 <= s <= 10 for s in scores):
         raise ValueError("All scores must be between 0 and 10")
 
-    weighted = (
-        material_score * ECO_SCORE_WEIGHTS["material_sustainability"]
-        + carbon_score * ECO_SCORE_WEIGHTS["carbon_footprint"]
-        + durability_score * ECO_SCORE_WEIGHTS["durability"]
-        + recyclability_score * ECO_SCORE_WEIGHTS["recyclability"]
-    )
+    weighted = (material_score * ECO_SCORE_WEIGHTS["material_sustainability"] +
+                carbon_score * ECO_SCORE_WEIGHTS["carbon_footprint"] +
+                durability_score * ECO_SCORE_WEIGHTS["durability"] +
+                recyclability_score * ECO_SCORE_WEIGHTS["recyclability"])
     return round(weighted, 2)
 
 
