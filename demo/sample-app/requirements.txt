@@ -1,4 +1,4 @@
-# EcoCI Guardian — Demo Sample App Dependencies
+# ECOOPS — Demo Sample App Dependencies
 flask>=3.0.0
 pytest>=8.0.0
 pytest-cov>=4.0.0
