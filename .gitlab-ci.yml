@@ -6,7 +6,6 @@
 stages:
   - validate
   - test
-  - pages
 
 # Validate YAML syntax of the flow configuration
 validate_flow_yaml:
@@ -16,16 +15,7 @@ validate_flow_yaml:
     - pip install pyyaml
   script:
     - echo "Validating flow configuration YAML..."
-    - python -c "
-      import yaml, sys;
-      try:
-          with open('flows/ecoops-flow.yml') as f:
-              yaml.safe_load(f);
-          print('✅ Flow YAML is valid');
-      except Exception as e:
-          print(f'❌ Invalid YAML: {e}');
-          sys.exit(1)
-      "
+    - python -c "import yaml; yaml.safe_load(open('flows/ecoops-flow.yml')); print('Flow YAML is valid')"
   rules:
     - changes:
         - "flows/**/*.yml"
@@ -40,16 +30,7 @@ validate_demo_ci:
     - pip install pyyaml
   script:
     - echo "Validating demo CI YAML..."
-    - python -c "
-      import yaml, sys;
-      try:
-          with open('demo/wasteful-ci.yml') as f:
-              yaml.safe_load(f);
-          print('✅ Demo CI YAML is valid');
-      except Exception as e:
-          print(f'❌ Invalid YAML: {e}');
-          sys.exit(1)
-      "
+    - python -c "import yaml; yaml.safe_load(open('demo/wasteful-ci.yml')); print('Demo CI YAML is valid')"
   rules:
     - changes:
         - "demo/**/*.yml"
@@ -84,37 +65,3 @@ test_demo_app:
         - "demo/sample-app/**/*.py"
         - ".gitlab-ci.yml"
   allow_failure: true
-
-# Check markdown files for broken links (optional)
-check_docs:
-  stage: test
-  image: node:18-slim
-  before_script:
-    - npm install -g markdown-link-check
-  script:
-    - echo "Checking documentation links..."
-    - find . -name "*.md" -not -path "./node_modules/*" | xargs -I {} markdown-link-check {} || true
-  rules:
-    - changes:
-        - "**/*.md"
-        - ".gitlab-ci.yml"
-  allow_failure: true
-
-# Build GitLab Pages from docs (if needed)
-pages:
-  stage: pages
-  image: python:3.11-slim
-  before_script:
-    - pip install mkdocs mkdocs-material
-  script:
-    - echo "Building documentation site..."
-    - mkdocs build --site-dir public || echo "No mkdocs.yml found, skipping"
-  artifacts:
-    paths:
-      - public/
-  rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
-      changes:
-        - "docs/**/*"
-        - "mkdocs.yml"
-        - ".gitlab-ci.yml"
