@@ -17,6 +17,7 @@ Usage:
 
 import os
 import sys
+import json
 import argparse
 import re
 from datetime import datetime
@@ -91,6 +92,10 @@ def main():
                         help="Analyze only, don't create MR")
     parser.add_argument("--branch", default="ecoops/optimize-pipeline",
                         help="Branch name for optimized YAML")
+    parser.add_argument("--json", dest="json_output", action="store_true",
+                        help="Output results as JSON (for CI integration)")
+    parser.add_argument("--verbose", action="store_true",
+                        help="Show detailed debug output")
     args = parser.parse_args()
 
     # ── Load Environment ────────────────────────────────────
@@ -266,11 +271,13 @@ def main():
     report = generate_impact_report(waste_analysis, jobs_count)
 
     try:
+        monthly_minutes = parse_monthly_minutes(waste_analysis)
+        title_minutes = int(monthly_minutes) if monthly_minutes else "N"
         mr = gitlab.create_merge_request(
             source_branch=args.branch,
             target_branch=default_branch,
             title=(f"🌱 ECOOPS: Optimize pipeline to save "
-                   f"{int(parse_monthly_minutes(waste_analysis))} "
+                   f"{title_minutes} "
                    f"CI minutes/month"),
             description=(
                 "This MR optimizes `.gitlab-ci.yml` by adding "
@@ -302,6 +309,22 @@ def main():
     print(f"   📊 Jobs optimized: {jobs_count}")
     print()
     print(report)
+
+    # JSON output for CI integration
+    if args.json_output:
+        from reporter import parse_waste_metrics, calculate_savings
+        metrics = parse_waste_metrics(waste_analysis)
+        savings = calculate_savings(metrics)
+        output = {
+            "mr_url": mr_url,
+            "mr_iid": mr_iid,
+            "branch": args.branch,
+            "jobs_optimized": jobs_count,
+            "metrics": metrics,
+            "savings": savings,
+        }
+        print("\n--- JSON OUTPUT ---")
+        print(json.dumps(output, indent=2))
 
 
 def parse_monthly_minutes(waste_analysis: str) -> float:

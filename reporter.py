@@ -132,6 +132,21 @@ ECOOPS analyzed **{metrics['commits_analyzed']} commits** over \
 | 🌍 CO₂ Avoided | **{a['co2_avoided_kg']:.2f} kg** |
 | 🌳 Tree Equivalent | **{a['trees_equivalent']:.2f} trees/year** |
 
+## 🛠️ What Changed
+
+ECOOPS added `rules:changes:` blocks to **{jobs_optimized} CI jobs** so \
+they only run when their relevant source files are modified. This means \
+jobs like linting, building, and testing now **skip commits that don't \
+affect them** — saving compute, money, and carbon emissions.
+
+## 🏗️ Before vs After
+
+| | Before | After |
+|--|--------|-------|
+| Job Trigger | Every commit | Only relevant commits |
+| Wasted Runs | ~{metrics['waste_percentage']:.0f}% | ~0% |
+| Monthly CI Cost | ~${m['cost_saved']:.2f} wasted | Near-zero waste |
+
 ## 📏 Methodology
 
 | Factor | Value | Source |

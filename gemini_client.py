@@ -6,16 +6,48 @@ Handles interactions with the Google Gemini API for:
 - Generating optimized YAML configurations
 """
 
+import time
 from google import genai
-from typing import Dict
 
 
 class GeminiClient:
     """Client for interacting with Google Gemini API."""
 
-    def __init__(self, api_key: str, model: str = "gemini-2.0-flash"):
+    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
         self.client = genai.Client(api_key=api_key)
         self.model = model
+
+    def _generate(self, prompt: str,
+                  temperature: float = 0.3) -> str:
+        """Generate content from Gemini. Fails fast on quota errors."""
+        try:
+            response = self.client.models.generate_content(
+                model=self.model,
+                contents=prompt,
+                config={
+                    "temperature": temperature,
+                    "max_output_tokens": 8192,
+                },
+            )
+            return response.text
+        except Exception as e:
+            err_str = str(e).lower()
+            is_quota = any(k in err_str for k in
+                           ["429", "rate", "quota",
+                            "resource_exhausted"])
+            if is_quota:
+                print("\n" + "=" * 50)
+                print("❌ GEMINI API QUOTA EXHAUSTED")
+                print("=" * 50)
+                print("   Your Gemini API key has hit its rate limit.")
+                print("   Possible fixes:")
+                print("   1. Wait a few minutes and try again")
+                print("   2. Use a different API key in .env")
+                print("   3. Upgrade your Gemini API plan")
+                print("=" * 50)
+                import sys
+                sys.exit(1)
+            raise e
 
     def analyze_waste(self, ci_yaml: str, commits_data: str,
                       repo_tree: str) -> str:
@@ -73,11 +105,7 @@ For EACH job that has waste:
 
 Be thorough and conservative. If unsure whether a job depends on certain files, assume it does."""
 
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
-        return response.text
+        return self._generate(prompt)
 
     def generate_optimized_yaml(self, ci_yaml: str,
                                 waste_analysis: str) -> str:
@@ -109,11 +137,7 @@ Be thorough and conservative. If unsure whether a job depends on certain files, 
 Return ONLY the complete, valid YAML content. No markdown fences, no explanation — just the raw YAML.
 Start directly with the first line of YAML (e.g., stages: or the first comment)."""
 
-        response = self.client.models.generate_content(
-            model=self.model,
-            contents=prompt,
-        )
-        text = response.text.strip()
+        text = self._generate(prompt).strip()
 
         # Strip markdown code fences if Gemini wraps them
         if text.startswith("```"):

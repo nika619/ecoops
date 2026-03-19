@@ -9,8 +9,9 @@ Handles all interactions with the GitLab REST API v4:
 - Posting merge request notes
 """
 
+import time
 import requests
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 class GitLabClient:
@@ -24,29 +25,61 @@ class GitLabClient:
         self.api_url = f"{self.base_url}/api/v4"
         self.headers = {"PRIVATE-TOKEN": self.token}
 
-    def _get(self, endpoint: str, params: Optional[Dict] = None) -> any:
+    def _request(self, method: str, endpoint: str,
+                 params: Optional[Dict] = None,
+                 json_data: Optional[Dict] = None,
+                 max_retries: int = 3) -> Any:
+        """Make an HTTP request with automatic retry on 429."""
+        url = f"{self.api_url}{endpoint}"
+        for attempt in range(max_retries):
+            response = getattr(requests, method)(
+                url, headers=self.headers,
+                params=params or {}, json=json_data, timeout=30
+            )
+            if response.status_code == 429:
+                wait = int(response.headers.get("Retry-After",
+                                                (attempt + 1) * 5))
+                print(f"   ⏳ GitLab rate limit, retrying in {wait}s...")
+                time.sleep(wait)
+                continue
+            response.raise_for_status()
+            return response
+        response.raise_for_status()  # final attempt error
+        return response
+
+    def _get(self, endpoint: str,
+             params: Optional[Dict] = None) -> Any:
         """Make a GET request to the GitLab API."""
-        url = f"{self.api_url}{endpoint}"
-        response = requests.get(url, headers=self.headers,
-                                params=params or {}, timeout=30)
-        response.raise_for_status()
-        return response.json()
+        return self._request("get", endpoint, params=params).json()
 
-    def _post(self, endpoint: str, json_data: Dict) -> any:
+    def _post(self, endpoint: str, json_data: Dict) -> Any:
         """Make a POST request to the GitLab API."""
-        url = f"{self.api_url}{endpoint}"
-        response = requests.post(url, headers=self.headers,
-                                 json=json_data, timeout=30)
-        response.raise_for_status()
-        return response.json()
+        return self._request("post", endpoint,
+                             json_data=json_data).json()
 
-    def _put(self, endpoint: str, json_data: Dict) -> any:
+    def _put(self, endpoint: str, json_data: Dict) -> Any:
         """Make a PUT request to the GitLab API."""
-        url = f"{self.api_url}{endpoint}"
-        response = requests.put(url, headers=self.headers,
-                                json=json_data, timeout=30)
-        response.raise_for_status()
-        return response.json()
+        return self._request("put", endpoint,
+                             json_data=json_data).json()
+
+    def _get_all_pages(self, endpoint: str,
+                       params: Optional[Dict] = None,
+                       max_pages: int = 10) -> List[Dict]:
+        """Paginate through all results for a GET endpoint."""
+        params = dict(params or {})
+        params.setdefault("per_page", 100)
+        results: List[Dict] = []
+        for page in range(1, max_pages + 1):
+            params["page"] = page
+            resp = self._request("get", endpoint, params=params)
+            data = resp.json()
+            if not data:
+                break
+            results.extend(data)
+            # Stop if fewer results than per_page (last page)
+            if len(data) < params["per_page"]:
+                break
+        return results
 
     # ── Project Info ────────────────────────────────────────────
 
@@ -112,11 +145,10 @@ class GitLabClient:
                              ref: str = "main",
                              recursive: bool = True) -> List[Dict]:
         """List files and directories in the repository."""
-        return self._get(
+        return self._get_all_pages(
             f"/projects/{self.project_id}/repository/tree",
             params={"path": path, "ref": ref,
-                     "recursive": str(recursive).lower(),
-                     "per_page": 100}
+                     "recursive": str(recursive).lower()}
         )
 
     # ── CI Linter ───────────────────────────────────────────────

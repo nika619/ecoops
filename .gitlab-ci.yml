@@ -6,6 +6,7 @@
 stages:
   - validate
   - test
+  - analyze
 
 # Validate YAML syntax of the flow configuration
 validate_flow_yaml:
@@ -64,4 +65,37 @@ test_demo_app:
     - changes:
         - "demo/sample-app/**/*.py"
         - ".gitlab-ci.yml"
+  allow_failure: true
+
+# Lint core ECOOPS Python modules
+lint_core:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install flake8
+  script:
+    - echo "Linting ECOOPS core modules..."
+    - flake8 ecoops.py gitlab_client.py gemini_client.py reporter.py --max-line-length=120 --ignore=E402,W503
+  rules:
+    - changes:
+        - "*.py"
+        - ".gitlab-ci.yml"
+  allow_failure: true
+
+# Run ECOOPS analysis on this project (dry-run, scheduled)
+ecoops_analyze:
+  stage: analyze
+  image: python:3.11-slim
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "Running ECOOPS pipeline analysis (dry-run)..."
+    - python ecoops.py --dry-run --json
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
+  variables:
+    GITLAB_TOKEN: $GITLAB_TOKEN
+    GEMINI_API_KEY: $GEMINI_API_KEY
+    GITLAB_PROJECT_ID: $CI_PROJECT_ID
   allow_failure: true
