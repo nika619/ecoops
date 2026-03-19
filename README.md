@@ -30,7 +30,7 @@ This waste translates directly to:
 
 ## 💡 The Solution
 
-**ECOOPS** is an AI-powered agent system built on the **GitLab Duo Agent Platform** that:
+**ECOOPS** is an intelligent agent system built on the **GitLab Duo Agent Platform** that:
 
 1. **Analyzes** your pipeline history to find wasted compute
 2. **Optimizes** your `.gitlab-ci.yml` with smart `rules:changes:` blocks
@@ -236,27 +236,6 @@ ecoops/
 └── README.md
 ```
 
----
-
-## 🏆 Hackathon Submission
-
-**GitLab Duo AI Agents Hackathon** — March 2026
-
-### Categories Targeted
-
-| Category | Prize | Why ECOOPS Qualifies |
-|----------|-------|----------------------|
-| 🏆 Grand Prize | $15,000 | Multi-agent flow with real-world impact |
-| 🌱 Green Agent | $3,000 | Purpose-built for sustainability |
-| 🌿 Sustainable Design | $500 | CO₂-aware optimization methodology |
-| 💥 Most Impactful | $5,000 | Every CI pipeline in the world benefits |
-| 🧠 Anthropic Excellence | $10,000 | Claude-powered analysis and code generation |
-
-### Demo Video
-
-> 🎬 [Watch the 3-minute demo](https://youtube.com/watch?v=TODO) — See ECOOPS transform a wasteful pipeline into an optimized, green CI configuration in real-time.
-
----
 
 ## 🤝 Contributing
 
@@ -277,6 +256,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 <p align="center">
   <strong>🌱 ECOOPS</strong><br/>
   <em>Emission Cost Optimizer — Operations Pipeline System</em><br/>
-  <em>Making CI/CD sustainable, one pipeline at a time.</em><br/><br/>
-  Built with ❤️ for the GitLab Duo AI Agents Hackathon 2026
+  <em>Making CI/CD sustainable, one pipeline at a time.</em>
 </p>
+

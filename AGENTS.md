@@ -4,7 +4,7 @@
 
 ## Project Context
 
-ECOOPS (Emission Cost Optimizer — Operations Pipeline System) is an AI-powered CI/CD sustainability tool. It analyzes pipeline history, identifies wasted compute (jobs that run on irrelevant commits), and optimizes `.gitlab-ci.yml` configurations with `rules:changes:` blocks.
+ECOOPS (Emission Cost Optimizer — Operations Pipeline System) is a CI/CD sustainability tool built on the GitLab Duo Agent Platform. It analyzes pipeline history, identifies wasted compute (jobs that run on irrelevant commits), and optimizes `.gitlab-ci.yml` configurations with `rules:changes:` blocks.
 
 ## Repository Layout
 
