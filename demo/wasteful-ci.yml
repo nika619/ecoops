@@ -1,0 +1,102 @@
+# This is an intentionally WASTEFUL CI configuration for demo purposes.
+# Every job runs on EVERY commit, regardless of what files changed.
+# EcoCI Guardian will detect this waste and add rules:changes: blocks.
+
+stages:
+  - lint
+  - build
+  - test
+  - docs
+  - deploy
+
+# 🚨 WASTE: Runs on every commit, even when no Python files changed
+lint:
+  stage: lint
+  image: python:3.11-slim
+  before_script:
+    - pip install flake8 black isort
+  script:
+    - echo "Running Python linters..."
+    - flake8 src/ --max-line-length=120
+    - black --check src/
+    - isort --check-only src/
+  allow_failure: true
+
+# 🚨 WASTE: Runs on every commit, even when only docs or tests changed
+build:
+  stage: build
+  image: python:3.11-slim
+  before_script:
+    - pip install -r requirements.txt
+  script:
+    - echo "Building application..."
+    - python -m compileall src/
+    - python setup.py sdist bdist_wheel
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 1 week
+
+# 🚨 WASTE: Runs on every commit, even when only docs changed
+test:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov
+  script:
+    - echo "Running test suite..."
+    - pytest tests/ -v --cov=src --cov-report=html
+  artifacts:
+    paths:
+      - htmlcov/
+    expire_in: 1 week
+  coverage: '/TOTAL.*\s+(\d+%)/'
+
+# 🚨 WASTE: Runs on every commit, even when no docs files changed
+pages:
+  stage: docs
+  image: python:3.11-slim
+  before_script:
+    - pip install mkdocs mkdocs-material
+  script:
+    - echo "Building documentation..."
+    - mkdocs build --site-dir public
+  artifacts:
+    paths:
+      - public/
+  only:
+    - main
+
+# 🚨 WASTE: Runs on every push to main, even when nothing meaningful changed
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache curl
+  script:
+    - echo "Deploying application..."
+    - echo "Uploading to staging environment..."
+    - echo "Running smoke tests..."
+    - echo "Deployment complete!"
+  environment:
+    name: staging
+    url: https://staging.example.com
+  only:
+    - main
+
+# 🚨 WASTE: Security scan runs on every commit
+security_scan:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install safety bandit
+  script:
+    - echo "Running security checks..."
+    - safety check --file requirements.txt || true
+    - bandit -r src/ -f json -o bandit-report.json || true
+  artifacts:
+    paths:
+      - bandit-report.json
+    expire_in: 1 week
+  allow_failure: true

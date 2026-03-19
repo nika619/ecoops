@@ -1,0 +1,119 @@
+# EcoCI Guardian — Project CI/CD Configuration
+# This CI is for the EcoCI Guardian project ITSELF (not the demo project).
+# It validates documentation, lints YAML, and runs basic checks.
+
+stages:
+  - validate
+  - test
+  - pages
+
+# Validate YAML syntax of the flow configuration
+validate_flow_yaml:
+  stage: validate
+  image: python:3.11-slim
+  before_script:
+    - pip install pyyaml
+  script:
+    - echo "Validating flow configuration YAML..."
+    - python -c "
+      import yaml, sys;
+      try:
+          with open('flows/ecoci-flow.yml') as f:
+              yaml.safe_load(f);
+          print('✅ Flow YAML is valid');
+      except Exception as e:
+          print(f'❌ Invalid YAML: {e}');
+          sys.exit(1)
+      "
+  rules:
+    - changes:
+        - "flows/**/*.yml"
+        - "flows/**/*.yaml"
+        - ".gitlab-ci.yml"
+
+# Validate the demo CI config
+validate_demo_ci:
+  stage: validate
+  image: python:3.11-slim
+  before_script:
+    - pip install pyyaml
+  script:
+    - echo "Validating demo CI YAML..."
+    - python -c "
+      import yaml, sys;
+      try:
+          with open('demo/wasteful-ci.yml') as f:
+              yaml.safe_load(f);
+          print('✅ Demo CI YAML is valid');
+      except Exception as e:
+          print(f'❌ Invalid YAML: {e}');
+          sys.exit(1)
+      "
+  rules:
+    - changes:
+        - "demo/**/*.yml"
+        - ".gitlab-ci.yml"
+
+# Lint Python code in the demo sample app
+lint_demo_app:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install flake8
+  script:
+    - echo "Linting demo application code..."
+    - flake8 demo/sample-app/ --max-line-length=120 --ignore=E402
+  rules:
+    - changes:
+        - "demo/sample-app/**/*.py"
+        - ".gitlab-ci.yml"
+  allow_failure: true
+
+# Run demo app tests
+test_demo_app:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install flask pytest
+  script:
+    - echo "Running demo app tests..."
+    - cd demo/sample-app && python -m pytest tests/ -v
+  rules:
+    - changes:
+        - "demo/sample-app/**/*.py"
+        - ".gitlab-ci.yml"
+  allow_failure: true
+
+# Check markdown files for broken links (optional)
+check_docs:
+  stage: test
+  image: node:18-slim
+  before_script:
+    - npm install -g markdown-link-check
+  script:
+    - echo "Checking documentation links..."
+    - find . -name "*.md" -not -path "./node_modules/*" | xargs -I {} markdown-link-check {} || true
+  rules:
+    - changes:
+        - "**/*.md"
+        - ".gitlab-ci.yml"
+  allow_failure: true
+
+# Build GitLab Pages from docs (if needed)
+pages:
+  stage: pages
+  image: python:3.11-slim
+  before_script:
+    - pip install mkdocs mkdocs-material
+  script:
+    - echo "Building documentation site..."
+    - mkdocs build --site-dir public || echo "No mkdocs.yml found, skipping"
+  artifacts:
+    paths:
+      - public/
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+      changes:
+        - "docs/**/*"
+        - "mkdocs.yml"
+        - ".gitlab-ci.yml"

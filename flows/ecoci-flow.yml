@@ -1,0 +1,180 @@
+# EcoCI Guardian Flow Configuration
+#
+# This file is a reference for the flow configuration to be entered
+# in the GitLab AI Catalog UI. It defines a 3-agent sequential flow
+# that analyzes CI pipeline waste, optimizes YAML, and generates
+# a Green Impact Report.
+#
+# Trigger: @mention of the flow's service account in an issue or MR comment
+# Pipeline: Pipeline Analyzer → YAML Optimizer → Green Impact Reporter
+
+version: "v1"
+environment: ambient
+
+components:
+    - name: "pipeline_analyzer"
+      type: AgentComponent
+      prompt_id: "ecoci_analyze"
+      inputs:
+          - from: "context:goal"
+            as: "request"
+          - from: "context:project_id"
+            as: "project_id"
+      toolset:
+          - "gitlab_api_get"
+          - "get_repository_file"
+          - "list_repository_tree"
+          - "get_job_logs"
+      ui_log_events:
+          - "on_agent_final_answer"
+
+    - name: "yaml_optimizer"
+      type: AgentComponent
+      prompt_id: "ecoci_optimize"
+      inputs:
+          - from: "context:project_id"
+            as: "project_id"
+          - from: "pipeline_analyzer"
+            as: "waste_analysis"
+      toolset:
+          - "get_repository_file"
+          - "create_commit"
+          - "ci_linter"
+      ui_log_events:
+          - "on_tool_execution_success"
+          - "on_agent_final_answer"
+
+    - name: "impact_reporter"
+      type: AgentComponent
+      prompt_id: "ecoci_report"
+      inputs:
+          - from: "context:project_id"
+            as: "project_id"
+          - from: "pipeline_analyzer"
+            as: "waste_analysis"
+          - from: "yaml_optimizer"
+            as: "optimization_result"
+      toolset:
+          - "create_merge_request"
+          - "create_merge_request_note"
+      ui_log_events:
+          - "on_tool_execution_success"
+          - "on_agent_final_answer"
+
+prompts:
+    - prompt_id: "ecoci_analyze"
+      prompt_template:
+          system: |
+              You are EcoCI Pipeline Analyzer. Your job is to analyze CI pipeline
+              history and configuration to find wasted compute.
+
+              STEP 1: Use gitlab_api_get to fetch pipelines from
+              /api/v4/projects/{{project_id}}/pipelines?per_page=50&status=success
+
+              STEP 2: For each pipeline, fetch jobs from
+              /api/v4/projects/{{project_id}}/pipelines/<pipeline_id>/jobs
+
+              STEP 3: For each pipeline, fetch the commit diff from
+              /api/v4/projects/{{project_id}}/repository/commits/<sha>/diff
+
+              STEP 4: Use get_repository_file to read .gitlab-ci.yml and understand
+              what each job does (look at script commands, artifacts, cache paths).
+
+              STEP 5: Use list_repository_tree to understand the project's folder structure.
+
+              STEP 6: Cross-reference: for each job, determine which files it
+              depends on, then check how many pipeline runs triggered that job
+              even though none of those files changed in the commit.
+
+              OUTPUT: A structured waste analysis with:
+              - Job name, stage, relevant file paths (as globs)
+              - Total runs, wasted runs, waste percentage
+              - Average duration per run, total wasted minutes
+              - Summary: total wasted minutes, estimated monthly waste, days analyzed
+          user: |
+              Project ID: {{project_id}}
+              Request: {{request}}
+          placeholder: history
+      params:
+          timeout: 300
+
+    - prompt_id: "ecoci_optimize"
+      prompt_template:
+          system: |
+              You are EcoCI YAML Optimizer. Take the waste analysis and rewrite
+              the project's .gitlab-ci.yml to eliminate wasted CI runs.
+
+              STEP 1: Use get_repository_file to read the current .gitlab-ci.yml
+
+              STEP 2: For each wasted job in the analysis, add a rules:changes:
+              block using the relevant file paths identified by the analyzer.
+              - NEVER remove or modify existing job configurations
+              - ONLY add rules:changes: blocks
+              - Always include .gitlab-ci.yml in the changes list
+              - Add comment: # EcoCI: Added rules:changes to reduce waste
+
+              STEP 3: Validate the modified YAML using ci_linter.
+              If validation fails, fix issues and re-validate.
+
+              STEP 4: Use create_commit to commit the optimized .gitlab-ci.yml
+              to branch ecoci/optimize-pipeline.
+
+              OUTPUT: Branch name, list of jobs modified with their new rules,
+              and ci_linter validation confirmation.
+          user: |
+              Project ID: {{project_id}}
+              Waste Analysis: {{waste_analysis}}
+          placeholder: history
+      params:
+          timeout: 300
+
+    - prompt_id: "ecoci_report"
+      prompt_template:
+          system: |
+              You are EcoCI Green Impact Reporter. Calculate the environmental
+              and cost savings from the optimization and create a Merge Request.
+
+              CONVERSION FACTORS:
+              - Runner cost: $0.008 per CI minute
+              - Server power: 0.5 kWh per compute hour
+              - Carbon intensity: 0.385 kg CO₂ per kWh (IEA global average)
+              - Tree absorption: 21.77 kg CO₂ per month per tree
+
+              FORMULAS:
+              minutes_saved/month = wasted_minutes × (30 / days_analyzed)
+              cost_saved/month = minutes_saved/month × $0.008
+              energy_saved/month = (minutes_saved/month / 60) × 0.5 kWh
+              co2_avoided/month = energy_saved/month × 0.385 kg
+              trees_equivalent = co2_avoided/month / 21.77
+
+              STEP 1: Calculate all metrics using the formulas above.
+
+              STEP 2: Use create_merge_request to create an MR from branch
+              ecoci/optimize-pipeline to the default branch with title:
+              🌱 EcoCI: Optimize pipeline to save [X] CI minutes/month
+
+              STEP 3: Use create_merge_request_note to post the full
+              Green Impact Report as an MR comment, including:
+              - Summary table (before/after with savings)
+              - Monthly savings with emoji indicators
+              - Annual projections
+              - Jobs optimized table
+              - Methodology section
+          user: |
+              Project ID: {{project_id}}
+              Waste Analysis: {{waste_analysis}}
+              Optimization Result: {{optimization_result}}
+          placeholder: history
+      params:
+          timeout: 300
+
+routers:
+    - from: "pipeline_analyzer"
+      to: "yaml_optimizer"
+    - from: "yaml_optimizer"
+      to: "impact_reporter"
+    - from: "impact_reporter"
+      to: "end"
+
+flow:
+    entry_point: "pipeline_analyzer"
