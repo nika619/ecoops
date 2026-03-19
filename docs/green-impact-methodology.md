@@ -1,10 +1,10 @@
 # 🌿 Green Impact Methodology
 
-> How EcoCI Guardian calculates environmental savings from CI/CD optimization.
+> How ECOOPS calculates environmental savings from CI/CD optimization.
 
 ## Overview
 
-EcoCI Guardian estimates the environmental impact of CI/CD waste by converting **wasted CI minutes** into energy consumption, CO₂ emissions, and cost. This document explains every step of the calculation methodology.
+ECOOPS estimates the environmental impact of CI/CD waste by converting **wasted CI minutes** into energy consumption, CO₂ emissions, and cost. This document explains every step of the calculation methodology.
 
 ## Conversion Factors
 

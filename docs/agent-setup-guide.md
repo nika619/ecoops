@@ -1,4 +1,4 @@
-# Agent Setup Guide — EcoCI Guardian
+# Agent Setup Guide — ECOOPS
 
 > Step-by-step instructions for creating the 3 agents and 1 flow in the GitLab AI Catalog.
 
@@ -18,7 +18,7 @@
 
 | Field | Value |
 |-------|-------|
-| Display Name | `EcoCI Pipeline Analyzer` |
+| Display Name | `ECOOPS Pipeline Analyzer` |
 | Description | `Analyzes pipeline history and .gitlab-ci.yml to identify wasted CI compute` |
 | Visibility | `Public` |
 
@@ -42,7 +42,7 @@
 
 | Field | Value |
 |-------|-------|
-| Display Name | `EcoCI YAML Optimizer` |
+| Display Name | `ECOOPS YAML Optimizer` |
 | Description | `Rewrites .gitlab-ci.yml with rules:changes: blocks to eliminate waste` |
 | Visibility | `Public` |
 
@@ -64,7 +64,7 @@
 
 | Field | Value |
 |-------|-------|
-| Display Name | `EcoCI Green Impact Reporter` |
+| Display Name | `ECOOPS Green Impact Reporter` |
 | Description | `Calculates CO₂ + cost savings and creates MR with Green Impact Report` |
 | Visibility | `Public` |
 
@@ -79,18 +79,18 @@
 
 ---
 
-## Step 4: Create Flow — EcoCI Guardian
+## Step 4: Create Flow — ECOOPS
 
 1. Navigate to **your group → Settings → AI Catalog → Flows → New Flow**
 2. Fill in the details:
 
 | Field | Value |
 |-------|-------|
-| Display Name | `EcoCI Guardian` |
+| Display Name | `ECOOPS` |
 | Description | `Analyzes CI pipeline waste and auto-optimizes .gitlab-ci.yml with a Green Impact Report` |
 | Visibility | `Public` |
 
-3. Under **Flow Configuration**, paste the YAML from [`flows/ecoci-flow.yml`](../flows/ecoci-flow.yml)
+3. Under **Flow Configuration**, paste the YAML from [`flows/ecoops-flow.yml`](../flows/ecoops-flow.yml)
 
 4. Click **Create Flow**
 
@@ -100,12 +100,12 @@
 
 1. Open the project where you want to optimize the CI pipeline
 2. Navigate to **Settings → Integrations → AI Agents**
-3. Find **EcoCI Guardian** in the list and click **Enable**
-4. A service account will be created (e.g., `@ecoci-guardian-[group]`)
+3. Find **ECOOPS** in the list and click **Enable**
+4. A service account will be created (e.g., `@ecoops-[group]`)
 
 ---
 
-## Step 6: Trigger EcoCI Guardian
+## Step 6: Trigger ECOOPS
 
 ### Option A: Issue @mention
 
@@ -113,7 +113,7 @@
 2. Write a comment mentioning the service account:
 
 ```
-@ecoci-guardian-[group] Please analyze this project's CI pipeline for waste and optimize it.
+@ecoops-[group] Please analyze this project's CI pipeline for waste and optimize it.
 ```
 
 3. The flow will start automatically
@@ -121,7 +121,7 @@
 ### Option B: Individual Agent via Duo Chat
 
 1. Open **Duo Chat** (sidebar → Duo Chat)
-2. Select one of the EcoCI agents from the agent dropdown
+2. Select one of the ECOOPS agents from the agent dropdown
 3. Ask it to analyze the current project
 
 ---

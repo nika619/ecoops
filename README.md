@@ -1,4 +1,6 @@
-# EcoCI Guardian 🌱
+# ECOOPS 🌱
+
+### Emission Cost Optimizer — Operations Pipeline System
 
 > **Making CI/CD sustainable, one pipeline at a time.**
 
@@ -28,7 +30,7 @@ This waste translates directly to:
 
 ## 💡 The Solution
 
-**EcoCI Guardian** is an AI-powered agent system built on the **GitLab Duo Agent Platform** that:
+**ECOOPS** is an AI-powered agent system built on the **GitLab Duo Agent Platform** that:
 
 1. **Analyzes** your pipeline history to find wasted compute
 2. **Optimizes** your `.gitlab-ci.yml` with smart `rules:changes:` blocks
@@ -40,11 +42,11 @@ All triggered with a single `@mention` — zero configuration required.
 
 ## 🏗️ Architecture
 
-EcoCI Guardian consists of **3 specialized agents** orchestrated by **1 flow**:
+ECOOPS consists of **3 specialized agents** orchestrated by **1 flow**:
 
 ```mermaid
 graph LR
-    A["👤 User @mentions<br/>EcoCI Guardian"] --> B["🔍 Pipeline Analyzer<br/>Agent"]
+    A["👤 User @mentions<br/>ECOOPS"] --> B["🔍 Pipeline Analyzer<br/>Agent"]
     B -->|"Waste Analysis<br/>(jobs, paths, minutes)"| C["⚙️ YAML Optimizer<br/>Agent"]
     C -->|"Optimized YAML<br/>on branch"| D["📊 Green Impact<br/>Reporter Agent"]
     D --> E["🌱 Merge Request<br/>with Green Impact Report"]
@@ -64,7 +66,7 @@ graph LR
 | **⚙️ YAML Optimizer** | Adds `rules:changes:` blocks to wasteful jobs, validates with CI linter, commits to branch | `get_repository_file`, `create_commit`, `ci_linter` |
 | **📊 Green Impact Reporter** | Calculates CO₂/cost/energy savings, creates MR with comprehensive Green Impact Report | `create_merge_request`, `create_merge_request_note` |
 
-### Flow: EcoCI Guardian
+### Flow: ECOOPS
 
 - **Type**: Ambient (multi-agent orchestration)
 - **Trigger**: `@mention` of the service account or issue assignment
@@ -85,12 +87,12 @@ graph LR
 1. **Enable the agents and flow** in your GitLab group via the AI Catalog
    - See [Agent Setup Guide](docs/agent-setup-guide.md) for detailed instructions
 
-2. **Trigger EcoCI Guardian** — open an issue in your project and mention the service account:
+2. **Trigger ECOOPS** — open an issue in your project and mention the service account:
    ```
-   @ecoci-guardian Please analyze this project's CI pipeline for waste and optimize it.
+   @ecoops Please analyze this project's CI pipeline for waste and optimize it.
    ```
 
-3. **Wait for the magic** ✨ — EcoCI Guardian will:
+3. **Wait for the magic** ✨ — ECOOPS will:
    - Analyze your last 50-100 pipeline runs
    - Identify jobs running on irrelevant commits
    - Create a branch with an optimized `.gitlab-ci.yml`
@@ -170,8 +172,8 @@ lint:
   script:
     - flake8 src/
 
-# After (EcoCI optimized — only runs when Python files change):
-# EcoCI: Added rules:changes to reduce waste
+# After (ECOOPS optimized — only runs when Python files change):
+# ECOOPS: Added rules:changes to reduce waste
 lint:
   stage: test
   script:
@@ -198,14 +200,14 @@ CO₂ Avoided/Month   = Energy Saved/Month × 0.385 kg
 Trees Equivalent    = CO₂ Avoided/Month / 21.77
 ```
 
-It creates a Merge Request from `ecoci/optimize-pipeline` → default branch, with the full Green Impact Report posted as an MR note.
+It creates a Merge Request from `ecoops/optimize-pipeline` → default branch, with the full Green Impact Report posted as an MR note.
 
 ---
 
 ## 📁 Repository Structure
 
 ```
-ecoci-guardian/
+ecoops/
 ├── .gitlab/
 │   └── duo/
 │       └── agents.md              # Agent behavior rules (Duo context)
@@ -214,7 +216,7 @@ ecoci-guardian/
 │   ├── yaml-optimizer.md          # YAML Optimizer system prompt
 │   └── green-impact-reporter.md   # Green Impact Reporter system prompt
 ├── flows/
-│   └── ecoci-flow.yml             # Flow configuration (reference)
+│   └── ecoops-flow.yml            # Flow configuration (reference)
 ├── demo/
 │   ├── sample-app/                # Sample Python app for demo
 │   │   ├── app.py
@@ -242,8 +244,8 @@ ecoci-guardian/
 
 ### Categories Targeted
 
-| Category | Prize | Why EcoCI Guardian Qualifies |
-|----------|-------|------------------------------|
+| Category | Prize | Why ECOOPS Qualifies |
+|----------|-------|----------------------|
 | 🏆 Grand Prize | $15,000 | Multi-agent flow with real-world impact |
 | 🌱 Green Agent | $3,000 | Purpose-built for sustainability |
 | 🌿 Sustainable Design | $500 | CO₂-aware optimization methodology |
@@ -252,7 +254,7 @@ ecoci-guardian/
 
 ### Demo Video
 
-> 🎬 [Watch the 3-minute demo](https://youtube.com/watch?v=TODO) — See EcoCI Guardian transform a wasteful pipeline into an optimized, green CI configuration in real-time.
+> 🎬 [Watch the 3-minute demo](https://youtube.com/watch?v=TODO) — See ECOOPS transform a wasteful pipeline into an optimized, green CI configuration in real-time.
 
 ---
 
@@ -273,7 +275,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 ---
 
 <p align="center">
-  <strong>🌱 EcoCI Guardian</strong><br/>
+  <strong>🌱 ECOOPS</strong><br/>
+  <em>Emission Cost Optimizer — Operations Pipeline System</em><br/>
   <em>Making CI/CD sustainable, one pipeline at a time.</em><br/><br/>
   Built with ❤️ for the GitLab Duo AI Agents Hackathon 2026
 </p>

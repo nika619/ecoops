@@ -1,6 +1,6 @@
 # This is an intentionally WASTEFUL CI configuration for demo purposes.
 # Every job runs on EVERY commit, regardless of what files changed.
-# EcoCI Guardian will detect this waste and add rules:changes: blocks.
+# ECOOPS will detect this waste and add rules:changes: blocks.
 
 stages:
   - lint

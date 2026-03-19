@@ -1,5 +1,6 @@
-# EcoCI Guardian — Project CI/CD Configuration
-# This CI is for the EcoCI Guardian project ITSELF (not the demo project).
+# ECOOPS — Project CI/CD Configuration
+# Emission Cost Optimizer — Operations Pipeline System
+# This CI is for the ECOOPS project ITSELF (not the demo project).
 # It validates documentation, lints YAML, and runs basic checks.
 
 stages:
@@ -18,7 +19,7 @@ validate_flow_yaml:
     - python -c "
       import yaml, sys;
       try:
-          with open('flows/ecoci-flow.yml') as f:
+          with open('flows/ecoops-flow.yml') as f:
               yaml.safe_load(f);
           print('✅ Flow YAML is valid');
       except Exception as e:

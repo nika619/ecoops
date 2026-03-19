@@ -3,7 +3,7 @@ Utility functions for the EcoProducts sample application.
 
 These utilities handle eco-score calculations, carbon offset
 estimations, and data validation. Having utilities in a separate
-file helps demonstrate EcoCI Guardian's path-based optimization —
+file helps demonstrate ECOOPS path-based optimization —
 changes to this file should trigger lint + build + test jobs,
 but NOT docs or deploy jobs.
 """

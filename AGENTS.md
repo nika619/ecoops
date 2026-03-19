@@ -1,10 +1,10 @@
-# AGENTS.md — EcoCI Guardian
+# AGENTS.md — ECOOPS
 
-> This file provides cross-tool agent instructions for the EcoCI Guardian project.
+> This file provides cross-tool agent instructions for the ECOOPS project.
 
 ## Project Context
 
-EcoCI Guardian is an AI-powered CI/CD sustainability tool. It analyzes pipeline history, identifies wasted compute (jobs that run on irrelevant commits), and optimizes `.gitlab-ci.yml` configurations with `rules:changes:` blocks.
+ECOOPS (Emission Cost Optimizer — Operations Pipeline System) is an AI-powered CI/CD sustainability tool. It analyzes pipeline history, identifies wasted compute (jobs that run on irrelevant commits), and optimizes `.gitlab-ci.yml` configurations with `rules:changes:` blocks.
 
 ## Repository Layout
 
@@ -26,7 +26,7 @@ EcoCI Guardian is an AI-powered CI/CD sustainability tool. It analyzes pipeline 
 - Preserve ALL existing job configurations (scripts, stages, artifacts, etc.)
 - Always include `.gitlab-ci.yml` in `rules:changes:` paths (so CI config changes still trigger jobs)
 - Always validate optimized YAML with `ci_linter` before committing
-- Use descriptive comments: `# EcoCI: Added rules:changes to reduce waste`
+- Use descriptive comments: `# ECOOPS: Added rules:changes to reduce waste`
 
 ### When reporting impact:
 - Use standard conversion factors from `docs/green-impact-methodology.md`
@@ -36,7 +36,7 @@ EcoCI Guardian is an AI-powered CI/CD sustainability tool. It analyzes pipeline 
 
 ## Key Conventions
 
-- Branch naming: `ecoci/optimize-pipeline`
-- MR title format: `🌱 EcoCI: Optimize pipeline to save [X] CI minutes/month`
+- Branch naming: `ecoops/optimize-pipeline`
+- MR title format: `🌱 ECOOPS: Optimize pipeline to save [X] CI minutes/month`
 - All calculations should use per-month projections for consistency
 - CO₂ values in kilograms, energy in kWh, cost in USD

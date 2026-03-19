@@ -1,8 +1,8 @@
 """
-EcoCI Guardian — Sample Application (Demo)
+ECOOPS — Sample Application (Demo)
 
 A simple Flask-based REST API for managing eco-friendly product ratings.
-This app exists solely to demonstrate EcoCI Guardian's CI optimization.
+This app exists solely to demonstrate ECOOPS CI optimization.
 The codebase has multiple directories (src/, tests/, docs/) so jobs can
 be mapped to specific file paths.
 """

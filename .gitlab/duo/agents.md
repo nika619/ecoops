@@ -1,6 +1,6 @@
-# EcoCI Guardian — Agent Behavior Rules
+# ECOOPS — Agent Behavior Rules
 
-> These rules apply to all EcoCI Guardian agents operating within this project.
+> These rules apply to all ECOOPS agents operating within this project.
 
 ## General Rules
 

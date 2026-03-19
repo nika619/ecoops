@@ -1,7 +1,7 @@
 """
 Tests for the EcoProducts sample application.
 
-Having tests in a separate directory helps demonstrate EcoCI Guardian's
+Having tests in a separate directory helps demonstrate ECOOPS
 path-based optimization — changes to test files should trigger the test
 job and lint job, but NOT the docs or deploy jobs.
 """
