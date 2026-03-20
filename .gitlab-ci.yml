@@ -8,6 +8,15 @@ stages:
   - test
   - analyze
 
+# ECOOPS: Always-run job so the pipeline never fails with 0 jobs
+pipeline_check:
+  stage: validate
+  image: alpine:latest
+  script:
+    - echo "🌱 ECOOPS pipeline running — commit $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
+  rules:
+    - when: always
+
 # Validate YAML syntax of the flow configuration
 validate_flow_yaml:
   stage: validate
