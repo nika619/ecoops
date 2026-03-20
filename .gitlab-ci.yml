@@ -75,10 +75,10 @@ lint_core:
     - pip install flake8
   script:
     - echo "Linting ECOOPS core modules..."
-    - flake8 ecoops.py gitlab_client.py gemini_client.py reporter.py --max-line-length=120 --ignore=E402,W503
+    - flake8 backend/ --max-line-length=120 --ignore=E402,W503
   rules:
     - changes:
-        - "*.py"
+        - "backend/**/*.py"
         - ".gitlab-ci.yml"
   allow_failure: true
 
@@ -90,7 +90,7 @@ ecoops_analyze:
     - pip install -r requirements.txt
   script:
     - echo "Running ECOOPS pipeline analysis (dry-run)..."
-    - python ecoops.py --dry-run --json
+    - python -m backend.ecoops --dry-run --json
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule"'
     - if: '$CI_PIPELINE_SOURCE == "web"'
