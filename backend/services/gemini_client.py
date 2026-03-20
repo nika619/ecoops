@@ -6,14 +6,23 @@ Handles interactions with the Google Gemini API for:
 - Generating optimized YAML configurations
 """
 
+import logging
 import time
 from google import genai
+from backend.config import GEMINI_MODEL
+
+logger = logging.getLogger("ecoops.gemini")
+
+
+class QuotaExhaustedError(Exception):
+    """Raised when Gemini API quota is exhausted."""
+    pass
 
 
 class GeminiClient:
     """Client for interacting with Google Gemini API."""
 
-    def __init__(self, api_key: str, model: str = "gemini-2.5-flash"):
+    def __init__(self, api_key: str, model: str = GEMINI_MODEL):
         self.client = genai.Client(api_key=api_key)
         self.model = model
 
@@ -36,17 +45,19 @@ class GeminiClient:
                            ["429", "rate", "quota",
                             "resource_exhausted"])
             if is_quota:
-                print("\n" + "=" * 50)
-                print("❌ GEMINI API QUOTA EXHAUSTED")
-                print("=" * 50)
-                print("   Your Gemini API key has hit its rate limit.")
-                print("   Possible fixes:")
-                print("   1. Wait a few minutes and try again")
-                print("   2. Use a different API key in .env")
-                print("   3. Upgrade your Gemini API plan")
-                print("=" * 50)
-                import sys
-                sys.exit(1)
+                logger.error("\n" + "=" * 50)
+                logger.error("❌ GEMINI API QUOTA EXHAUSTED")
+                logger.error("=" * 50)
+                logger.error("   Your Gemini API key has hit its rate limit.")
+                logger.error("   Possible fixes:")
+                logger.error("   1. Wait a few minutes and try again")
+                logger.error("   2. Use a different API key in .env")
+                logger.error("   3. Upgrade your Gemini API plan")
+                logger.error("=" * 50)
+                raise QuotaExhaustedError(
+                    "Gemini API quota exhausted. "
+                    "Please use a different API key or wait and retry."
+                ) from e
             raise e
 
     def analyze_waste(self, ci_yaml: str, commits_data: str,
@@ -97,11 +108,13 @@ For EACH job that has waste:
 - **Total Wasted Minutes**: [wasted_runs * avg_duration / 60]
 
 #### Summary:
-- Total Wasted CI Minutes: [sum]
-- Total Wasted Runs: [sum]
-- Overall Waste Percentage: [weighted average]
-- Estimated Monthly Waste: [extrapolated to 30 days]
-- Days Analyzed: [count]
+- **Total Wasted CI Minutes**: [sum of all job wasted minutes]
+- **Total Wasted Runs**: [sum of all job wasted runs]
+- **Overall Waste Percentage**: [weighted average]
+- **Estimated Monthly Waste**: [extrapolated to 30 days]
+- **Days Analyzed**: [count]
+
+**IMPORTANT**: You MUST include the Summary section above with exact field names. Do NOT skip it.
 
 Be thorough and conservative. If unsure whether a job depends on certain files, assume it does."""
 

@@ -9,9 +9,12 @@ Handles all interactions with the GitLab REST API v4:
 - Posting merge request notes
 """
 
+import logging
 import time
 import requests
 from typing import Any, Dict, List, Optional
+
+logger = logging.getLogger("ecoops.gitlab")
 
 
 class GitLabClient:
@@ -39,7 +42,7 @@ class GitLabClient:
             if response.status_code == 429:
                 wait = int(response.headers.get("Retry-After",
                                                 (attempt + 1) * 5))
-                print(f"   ⏳ GitLab rate limit, retrying in {wait}s...")
+                logger.warning(f"   ⏳ GitLab rate limit, retrying in {wait}s...")
                 time.sleep(wait)
                 continue
             response.raise_for_status()

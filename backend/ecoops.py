@@ -18,18 +18,20 @@ Usage:
 import os
 import sys
 import json
+import logging
 import argparse
-import re
-from datetime import datetime
 
 from dotenv import load_dotenv
 
-from gitlab_client import GitLabClient
-from gemini_client import GeminiClient
-from reporter import generate_impact_report
+from backend.utils.gitlab_client import GitLabClient
+from backend.services.gemini_client import GeminiClient
+from backend.services.reporter import generate_impact_report, parse_waste_metrics, calculate_savings
+from backend.utils.run_logger import save_run_log
+from backend.utils.shared_utils import (format_commits_data, format_repo_tree,
+                          count_optimized_jobs, parse_monthly_minutes)
 
 
-def print_banner():
+def print_banner() -> None:
     """Print the ECOOPS banner."""
     print("""
 ╔══════════════════════════════════════════════════╗
@@ -40,47 +42,25 @@ def print_banner():
     """)
 
 
-def format_commits_data(gitlab: GitLabClient, commits: list) -> str:
-    """Format commit data with diffs for Gemini analysis."""
-    result = []
-    for i, commit in enumerate(commits):
-        sha = commit["id"]
-        title = commit.get("title", "")
-        date = commit.get("created_at", "")[:10]
-
-        try:
-            diff = gitlab.get_commit_diff(sha)
-            changed_files = [d.get("new_path", d.get("old_path", ""))
-                             for d in diff]
-        except Exception:
-            changed_files = ["(could not fetch diff)"]
-
-        files_str = ", ".join(changed_files) if changed_files else "(none)"
-        result.append(
-            f"Commit {i + 1} [{date}] {sha[:8]}: {title}\n"
-            f"  Changed: {files_str}"
-        )
-
-    return "\n".join(result)
+logger = logging.getLogger("ecoops")
 
 
-def format_repo_tree(tree: list) -> str:
-    """Format repository tree for Gemini analysis."""
-    lines = []
-    for item in tree:
-        prefix = "📁 " if item["type"] == "tree" else "📄 "
-        lines.append(f"{prefix}{item['path']}")
-    return "\n".join(lines)
+# format_commits_data, format_repo_tree, count_optimized_jobs,
+# and parse_monthly_minutes are imported from shared_utils.py
 
 
-def count_optimized_jobs(waste_analysis: str) -> int:
-    """Count the number of wasted jobs found in analysis."""
-    count = len(re.findall(r"\*\*Job Name\*\*:", waste_analysis))
-    return max(count, 1)
-
-
-def main():
+def main() -> None:
     """Main ECOOPS pipeline."""
+    # Ensure UTF-8 output on Windows (cp1252 can't encode emojis / box-drawing)
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stderr, "reconfigure"):
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(message)s",
+    )
     print_banner()
 
     # ── Parse Arguments ─────────────────────────────────────
@@ -108,142 +88,144 @@ def main():
     base_url = os.getenv("GITLAB_BASE_URL", "https://gitlab.com")
 
     if not gitlab_token:
-        print("❌ GITLAB_TOKEN not set. Add it to .env file.")
+        logger.error("❌ GITLAB_TOKEN not set. Add it to .env file.")
         sys.exit(1)
     if not gemini_key:
-        print("❌ GEMINI_API_KEY not set. Add it to .env file.")
+        logger.error("❌ GEMINI_API_KEY not set. Add it to .env file.")
         sys.exit(1)
     if not project_id:
-        print("❌ Project ID not set. Use --project-id or .env.")
+        logger.error("❌ Project ID not set. Use --project-id or .env.")
         sys.exit(1)
 
     # ── Initialize Clients ──────────────────────────────────
     gitlab = GitLabClient(gitlab_token, project_id, base_url)
     gemini = GeminiClient(gemini_key)
 
-    print(f"📋 Project ID: {project_id}")
-    print(f"🌿 Branch: {args.branch}")
-    print()
+    logger.info(f"📋 Project ID: {project_id}")
+    logger.info(f"🌿 Branch: {args.branch}")
+    logger.info("")
 
     # ── Step 1: Fetch Data ──────────────────────────────────
-    print("═" * 50)
-    print("📡 Step 1: Fetching pipeline and commit data...")
-    print("═" * 50)
+    logger.info("═" * 50)
+    logger.info("📡 Step 1: Fetching pipeline and commit data...")
+    logger.info("═" * 50)
 
     try:
         project = gitlab.get_project()
-        print(f"   Project: {project['name_with_namespace']}")
+        logger.info(f"   Project: {project['name_with_namespace']}")
         default_branch = project.get("default_branch", "main")
     except Exception as e:
-        print(f"❌ Failed to fetch project: {e}")
+        logger.error(f"❌ Failed to fetch project: {e}")
         sys.exit(1)
 
     try:
         commits = gitlab.fetch_commits(per_page=50,
                                        ref_name=default_branch)
-        print(f"   ✅ Fetched {len(commits)} commits")
+        logger.info(f"   ✅ Fetched {len(commits)} commits")
     except Exception as e:
-        print(f"❌ Failed to fetch commits: {e}")
+        logger.error(f"❌ Failed to fetch commits: {e}")
         sys.exit(1)
 
     try:
         ci_yaml = gitlab.get_file_content(".gitlab-ci.yml",
                                           ref=default_branch)
-        print(f"   ✅ Read .gitlab-ci.yml ({len(ci_yaml)} bytes)")
+        logger.info(f"   ✅ Read .gitlab-ci.yml ({len(ci_yaml)} bytes)")
     except Exception as e:
-        print(f"❌ Failed to read .gitlab-ci.yml: {e}")
+        logger.error(f"❌ Failed to read .gitlab-ci.yml: {e}")
         sys.exit(1)
 
     try:
         tree = gitlab.list_repository_tree(ref=default_branch)
-        print(f"   ✅ Mapped repo structure ({len(tree)} items)")
+        logger.info(f"   ✅ Mapped repo structure ({len(tree)} items)")
     except Exception as e:
-        print(f"⚠️  Could not fetch repo tree: {e}")
+        logger.warning(f"⚠️  Could not fetch repo tree: {e}")
         tree = []
 
     commits_data = format_commits_data(gitlab, commits)
     repo_tree = format_repo_tree(tree) if tree else "(unavailable)"
 
     # ── Step 2: Analyze Waste ───────────────────────────────
-    print()
-    print("═" * 50)
-    print("🔍 Step 2: Analyzing pipeline waste with Gemini...")
-    print("═" * 50)
+    logger.info("")
+    logger.info("═" * 50)
+    logger.info("🔍 Step 2: Analyzing pipeline waste with Gemini...")
+    logger.info("═" * 50)
 
     try:
         waste_analysis = gemini.analyze_waste(ci_yaml, commits_data,
                                               repo_tree)
-        print("   ✅ Waste analysis complete")
-        print()
-        print(waste_analysis)
-        print()
+        logger.info("   ✅ Waste analysis complete")
+        logger.info("")
+        logger.info(waste_analysis)
+        logger.info("")
     except Exception as e:
-        print(f"❌ Gemini analysis failed: {e}")
+        logger.error(f"❌ Gemini analysis failed: {e}")
         sys.exit(1)
 
     # ── Step 3: Generate Optimized YAML ─────────────────────
-    print("═" * 50)
-    print("⚙️  Step 3: Generating optimized CI configuration...")
-    print("═" * 50)
+    logger.info("═" * 50)
+    logger.info("⚙️  Step 3: Generating optimized CI configuration...")
+    logger.info("═" * 50)
 
     try:
         optimized_yaml = gemini.generate_optimized_yaml(ci_yaml,
                                                         waste_analysis)
-        print(f"   ✅ Optimized YAML generated ({len(optimized_yaml)}"
+        logger.info(f"   ✅ Optimized YAML generated ({len(optimized_yaml)}"
               f" bytes)")
     except Exception as e:
-        print(f"❌ YAML optimization failed: {e}")
+        logger.error(f"❌ YAML optimization failed: {e}")
         sys.exit(1)
 
     # ── Step 4: Validate YAML ───────────────────────────────
-    print()
-    print("═" * 50)
-    print("🔧 Step 4: Validating with GitLab CI Linter...")
-    print("═" * 50)
+    logger.info("")
+    logger.info("═" * 50)
+    logger.info("🔧 Step 4: Validating with GitLab CI Linter...")
+    logger.info("═" * 50)
 
+    lint_valid = False
     try:
         lint_result = gitlab.validate_ci_yaml(optimized_yaml)
         if lint_result.get("valid"):
-            print("   ✅ CI Linter: YAML is valid!")
+            logger.info("   ✅ CI Linter: YAML is valid!")
+            lint_valid = True
         else:
             errors = lint_result.get("errors", [])
-            print(f"   ⚠️  CI Linter found issues: {errors}")
-            print("   Proceeding anyway (may need manual review)")
+            logger.warning(f"   ⚠️  CI Linter found issues: {errors}")
+            logger.info("   Proceeding anyway (may need manual review)")
     except Exception as e:
-        print(f"   ⚠️  Could not validate: {e}")
+        logger.warning(f"   ⚠️  Could not validate: {e}")
 
     if args.dry_run:
-        print()
-        print("═" * 50)
-        print("🏁 DRY RUN — Skipping branch/MR creation")
-        print("═" * 50)
-        print()
-        print("Optimized YAML preview:")
-        print("─" * 40)
-        print(optimized_yaml)
-        print("─" * 40)
+        logger.info("")
+        logger.info("═" * 50)
+        logger.info("🏁 DRY RUN — Skipping branch/MR creation")
+        logger.info("═" * 50)
+        logger.info("")
+        logger.info("Optimized YAML preview:")
+        logger.info("─" * 40)
+        logger.info(optimized_yaml)
+        logger.info("─" * 40)
 
         # Still generate and print the report
         jobs_count = count_optimized_jobs(waste_analysis)
         report = generate_impact_report(waste_analysis, jobs_count)
-        print()
-        print(report)
+        logger.info("")
+        logger.info(report)
         return
 
     # ── Step 5: Create Branch + Commit ──────────────────────
-    print()
-    print("═" * 50)
-    print("📤 Step 5: Creating branch and committing...")
-    print("═" * 50)
+    logger.info("")
+    logger.info("═" * 50)
+    logger.info("📤 Step 5: Creating branch and committing...")
+    logger.info("═" * 50)
 
     try:
         gitlab.create_branch(args.branch, ref=default_branch)
-        print(f"   ✅ Created branch: {args.branch}")
+        logger.info(f"   ✅ Created branch: {args.branch}")
     except Exception as e:
         if "already exists" in str(e).lower() or "400" in str(e):
-            print(f"   ℹ️  Branch {args.branch} already exists, reusing")
+            logger.info(f"   ℹ️  Branch {args.branch} already exists, reusing")
         else:
-            print(f"❌ Failed to create branch: {e}")
+            logger.error(f"❌ Failed to create branch: {e}")
             sys.exit(1)
 
     try:
@@ -256,16 +238,16 @@ def main():
                 "content": optimized_yaml,
             }]
         )
-        print("   ✅ Committed optimized .gitlab-ci.yml")
+        logger.info("   ✅ Committed optimized .gitlab-ci.yml")
     except Exception as e:
-        print(f"❌ Failed to commit: {e}")
+        logger.error(f"❌ Failed to commit: {e}")
         sys.exit(1)
 
     # ── Step 6: Create MR + Report ──────────────────────────
-    print()
-    print("═" * 50)
-    print("📊 Step 6: Creating Merge Request + Impact Report...")
-    print("═" * 50)
+    logger.info("")
+    logger.info("═" * 50)
+    logger.info("📊 Step 6: Creating Merge Request + Impact Report...")
+    logger.info("═" * 50)
 
     jobs_count = count_optimized_jobs(waste_analysis)
     report = generate_impact_report(waste_analysis, jobs_count)
@@ -287,60 +269,63 @@ def main():
         )
         mr_iid = mr["iid"]
         mr_url = mr.get("web_url", "")
-        print(f"   ✅ Created MR !{mr_iid}: {mr_url}")
+        logger.info(f"   ✅ Created MR !{mr_iid}: {mr_url}")
     except Exception as e:
-        print(f"❌ Failed to create MR: {e}")
+        logger.error(f"❌ Failed to create MR: {e}")
         sys.exit(1)
 
     try:
         gitlab.post_mr_note(mr_iid, report)
-        print("   ✅ Posted Green Impact Report as MR comment")
+        logger.info("   ✅ Posted Green Impact Report as MR comment")
     except Exception as e:
-        print(f"⚠️  Could not post report: {e}")
+        logger.warning(f"⚠️  Could not post report: {e}")
 
     # ── Done ────────────────────────────────────────────────
-    print()
-    print("═" * 50)
-    print("🎉 ECOOPS optimization complete!")
-    print("═" * 50)
-    print()
-    print(f"   🔗 Merge Request: {mr_url}")
-    print(f"   🌿 Branch: {args.branch}")
-    print(f"   📊 Jobs optimized: {jobs_count}")
-    print()
-    print(report)
+    logger.info("")
+    logger.info("═" * 50)
+    logger.info("🎉 ECOOPS optimization complete!")
+    logger.info("═" * 50)
+    logger.info("")
+    logger.info(f"   🔗 Merge Request: {mr_url}")
+    logger.info(f"   🌿 Branch: {args.branch}")
+    logger.info(f"   📊 Jobs optimized: {jobs_count}")
+    logger.info("")
+    logger.info(report)
 
     # JSON output for CI integration
+    _metrics = parse_waste_metrics(waste_analysis)
+    _savings = calculate_savings(_metrics)
+
     if args.json_output:
-        from reporter import parse_waste_metrics, calculate_savings
-        metrics = parse_waste_metrics(waste_analysis)
-        savings = calculate_savings(metrics)
         output = {
             "mr_url": mr_url,
             "mr_iid": mr_iid,
             "branch": args.branch,
             "jobs_optimized": jobs_count,
-            "metrics": metrics,
-            "savings": savings,
+            "metrics": _metrics,
+            "savings": _savings,
         }
         print("\n--- JSON OUTPUT ---")
         print(json.dumps(output, indent=2))
 
+    # Save run log
+    log_path = save_run_log({
+        "project": project.get("name_with_namespace", "unknown"),
+        "commits_analyzed": len(commits),
+        "jobs_optimized": jobs_count,
+        "metrics": _metrics,
+        "savings": _savings,
+        "waste_analysis": waste_analysis,
+        "original_yaml": ci_yaml,
+        "optimized_yaml": optimized_yaml,
+        "lint_valid": lint_valid,
+        "mr_url": mr_url if not args.dry_run else None,
+        "dry_run": args.dry_run,
+    })
+    logger.info(f"   📝 Run log saved: {log_path}")
 
-def parse_monthly_minutes(waste_analysis: str) -> float:
-    """Extract estimated monthly waste minutes from analysis."""
-    for line in waste_analysis.split("\n"):
-        if "monthly waste" in line.lower():
-            nums = re.findall(r"[\d,]+\.?\d*", line)
-            if nums:
-                return float(nums[-1].replace(",", ""))
-    # Fallback: look for total wasted minutes
-    for line in waste_analysis.split("\n"):
-        if "total wasted ci minutes" in line.lower():
-            nums = re.findall(r"[\d,]+\.?\d*", line)
-            if nums:
-                return float(nums[-1].replace(",", ""))
-    return 0
+
+# parse_monthly_minutes is now in shared_utils.py
 
 
 if __name__ == "__main__":

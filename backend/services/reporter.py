@@ -9,17 +9,22 @@ import math
 from typing import Dict
 import re
 
-
-# Standard conversion factors
-RUNNER_COST_PER_MINUTE = 0.008      # $ per CI minute (GitLab SaaS medium)
-SERVER_POWER_KWH = 0.5              # kWh per hour of compute
-CARBON_INTENSITY = 0.385            # kg CO₂ per kWh (IEA 2024 global avg)
-TREE_ABSORPTION_MONTHLY = 21.77     # kg CO₂ per tree per month (EPA)
-TREE_ABSORPTION_ANNUAL = 261.27     # kg CO₂ per tree per year
+from backend.config import (
+    RUNNER_COST_PER_MINUTE,
+    SERVER_POWER_KWH,
+    CARBON_INTENSITY,
+    TREE_ABSORPTION_MONTHLY,
+    TREE_ABSORPTION_ANNUAL,
+)
 
 
 def parse_waste_metrics(waste_analysis: str) -> Dict:
-    """Extract key metrics from the waste analysis text."""
+    """Extract key metrics from the waste analysis text.
+
+    Looks for summary-level metrics first.  When the summary section
+    is absent (Gemini sometimes omits it), falls back to summing
+    per-job metrics from the detailed breakdown.
+    """
     metrics = {
         "total_wasted_minutes": 0,
         "total_wasted_runs": 0,
@@ -28,16 +33,23 @@ def parse_waste_metrics(waste_analysis: str) -> Dict:
         "commits_analyzed": 0,
     }
 
+    # ── Per-job accumulators (fallback) ──────────────────────
+    per_job_minutes: list = []
+    per_job_wasted_runs: list = []
+    per_job_total_runs: list = []
+    per_job_waste_pct: list = []
+
     for line in waste_analysis.split("\n"):
         line_lower = line.lower().strip()
 
+        # ── Summary-level metrics ───────────────────────────
         if "total wasted ci minutes" in line_lower:
             nums = re.findall(r"[\d,]+\.?\d*", line)
             if nums:
                 metrics["total_wasted_minutes"] = float(
                     nums[-1].replace(",", ""))
 
-        elif "total wasted runs" in line_lower:
+        elif "total wasted runs" in line_lower and "job" not in line_lower:
             nums = re.findall(r"[\d,]+", line)
             if nums:
                 metrics["total_wasted_runs"] = int(
@@ -57,6 +69,61 @@ def parse_waste_metrics(waste_analysis: str) -> Dict:
             nums = re.findall(r"\d+", line)
             if nums:
                 metrics["commits_analyzed"] = int(nums[-1])
+
+        # ── Per-job metrics (for fallback summing) ──────────
+        elif "total wasted minutes" in line_lower:
+            nums = re.findall(r"[\d,]+\.?\d*", line)
+            if nums:
+                per_job_minutes.append(float(nums[-1].replace(",", "")))
+
+        elif "wasted runs" in line_lower and "total" not in line_lower:
+            nums = re.findall(r"[\d,]+", line)
+            if nums:
+                per_job_wasted_runs.append(int(nums[-1].replace(",", "")))
+
+        elif "total runs" in line_lower:
+            nums = re.findall(r"[\d,]+", line)
+            if nums:
+                per_job_total_runs.append(int(nums[-1].replace(",", "")))
+
+        elif "waste percentage" in line_lower and "overall" not in line_lower:
+            nums = re.findall(r"[\d.]+", line)
+            if nums:
+                per_job_waste_pct.append(float(nums[-1]))
+
+        # ── Date range → days_analyzed estimate ─────────────
+        elif "date range" in line_lower:
+            dates = re.findall(r"\d{4}-\d{2}-\d{2}", line)
+            if len(dates) >= 2:
+                from datetime import datetime as _dt
+                try:
+                    d0 = _dt.strptime(dates[0], "%Y-%m-%d")
+                    d1 = _dt.strptime(dates[-1], "%Y-%m-%d")
+                    diff = max((d1 - d0).days, 1)
+                    if metrics["days_analyzed"] <= 1:
+                        metrics["days_analyzed"] = diff
+                except ValueError:
+                    pass
+
+    # ── Fallback: if summary metrics are 0, sum per-job data ─
+    if metrics["total_wasted_minutes"] == 0 and per_job_minutes:
+        metrics["total_wasted_minutes"] = sum(per_job_minutes)
+
+    if metrics["total_wasted_runs"] == 0 and per_job_wasted_runs:
+        metrics["total_wasted_runs"] = sum(per_job_wasted_runs)
+
+    if metrics["waste_percentage"] == 0:
+        # Try average of per-job percentages
+        if per_job_waste_pct:
+            metrics["waste_percentage"] = round(
+                sum(per_job_waste_pct) / len(per_job_waste_pct), 1)
+        # Or compute from total/wasted runs
+        elif per_job_total_runs and per_job_wasted_runs:
+            total = sum(per_job_total_runs)
+            wasted = sum(per_job_wasted_runs)
+            if total > 0:
+                metrics["waste_percentage"] = round(
+                    (wasted / total) * 100, 1)
 
     return metrics
 

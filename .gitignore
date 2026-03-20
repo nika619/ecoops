@@ -1,6 +1,9 @@
 # Secrets
 .env
 
+# Run logs
+logs/
+
 # Python
 __pycache__/
 *.py[cod]

@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ECOOPS — CI/CD Sustainability Dashboard</title>
+    <meta name="description" content="AI-powered CI/CD pipeline optimizer that reduces waste, saves costs, and cuts carbon emissions.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- Floating UI: Popper + Tippy -->
+    <script src="https://unpkg.com/@popperjs/core@2"></script>
+    <script src="https://unpkg.com/tippy.js@6"></script>
+    <link rel="stylesheet" href="https://unpkg.com/tippy.js@6/animations/shift-away-subtle.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='14' fill='%230d1f15'/><path d='M16 6L16 20M12 14L16 20L20 14M10 24C10 24 13 18 16 24C19 18 22 24 22 24' stroke='%2322c55e' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<!-- ═══ Orbital Background ═══ -->
+<div class="orbital-bg">
+    <div class="star-field" id="star-field"></div>
+    <div class="nebula nebula-1"></div>
+    <div class="nebula nebula-2"></div>
+    <svg class="orbit-rings" viewBox="0 0 1200 600" preserveAspectRatio="xMidYMid slice">
+        <ellipse cx="600" cy="800" rx="500" ry="200" class="orbit-ring r1"/>
+        <ellipse cx="600" cy="900" rx="650" ry="260" class="orbit-ring r2"/>
+        <ellipse cx="600" cy="1000" rx="800" ry="320" class="orbit-ring r3"/>
+    </svg>
+</div>
+
+<!-- ═══ Navigation ═══ -->
+<nav class="navbar">
+    <div class="nav-brand">
+        <svg class="brand-icon" width="32" height="32" viewBox="0 0 32 32">
+            <circle cx="16" cy="16" r="14" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.3"/>
+            <path d="M16 6 L16 18 M12 14 L16 18 L20 14 M10 22 C10 22 13 18 16 22 C19 18 22 22 22 22" stroke="#22c55e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="brand-text" data-tippy-content="Emission Cost Optimizer — Operations Pipeline System">ECOOPS</span>
+        <span class="brand-tag">Orbital Pipeline Optimizer</span>
+    </div>
+    <div class="nav-links">
+        <a href="#" class="nav-link active" data-page="home">Dashboard</a>
+        <a href="#" class="nav-link" data-page="results" id="nav-results" style="display:none">Results</a>
+    </div>
+    <div class="nav-right">
+        <button class="motion-toggle" id="motion-toggle" title="Toggle animations" onclick="toggleMotion()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <span id="motion-label">Motion On</span>
+        </button>
+        <div class="nav-status">
+            <span class="status-dot" id="status-dot"></span>
+            <span class="status-text" id="status-text">Ready</span>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══ Forest Progress Bar ═══ -->
+<div class="forest-bar" id="forest-bar">
+    <div class="forest-fill" id="forest-fill" style="width:0%">
+        <svg class="forest-silhouette" viewBox="0 0 800 60" preserveAspectRatio="none">
+            <path d="M0,60 L0,45 Q20,20 40,45 Q50,15 60,40 Q70,10 80,38 Q95,5 110,40 Q120,18 130,42 Q145,8 160,40 Q170,22 180,44 Q195,12 210,42 Q220,20 230,45 Q245,10 260,40 Q275,5 290,38 Q300,15 310,42 Q325,8 340,40 Q350,20 360,44 Q375,12 390,42 Q400,18 410,45 Q425,10 440,38 Q450,15 460,42 Q475,5 490,40 Q500,20 510,44 Q525,12 540,42 Q550,8 560,40 Q575,15 590,42 Q600,10 610,38 Q625,5 640,42 Q660,15 680,40 Q700,8 720,42 Q740,20 760,40 Q780,10 800,45 L800,60 Z" fill="currentColor"/>
+        </svg>
+    </div>
+    <div class="forest-label" id="forest-label">🌱 Organization Impact: Ready to analyze</div>
+</div>
+
+<!-- ═══ Hero Section ═══ -->
+<section class="hero" id="hero-section">
+    <div class="hero-content">
+        <div class="hero-planet aos" data-aos="zoom-in">
+            <svg viewBox="0 0 200 200" class="planet-svg">
+                <defs>
+                    <radialGradient id="planetGrad" cx="40%" cy="35%">
+                        <stop offset="0%" stop-color="#1a3a2a"/>
+                        <stop offset="70%" stop-color="#0d1f15"/>
+                        <stop offset="100%" stop-color="#060e0a"/>
+                    </radialGradient>
+                    <filter id="glow"><feGaussianBlur stdDeviation="3" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                </defs>
+                <circle cx="100" cy="100" r="80" fill="url(#planetGrad)" stroke="#22c55e" stroke-width="0.5" opacity="0.8"/>
+                <ellipse cx="100" cy="100" rx="95" ry="20" fill="none" stroke="#22c55e" stroke-width="0.5" opacity="0.2" transform="rotate(-15 100 100)"/>
+                <g filter="url(#glow)" opacity="0.7">
+                    <path d="M70,90 L72,78 L68,78 L72,72 L68,72 L74,62 L80,72 L76,72 L80,78 L76,78 L78,90Z" fill="#22c55e"/>
+                    <path d="M95,85 L97,70 L93,70 L97,62 L93,62 L100,50 L107,62 L103,62 L107,70 L103,70 L105,85Z" fill="#16a34a"/>
+                    <path d="M120,92 L122,82 L118,82 L122,76 L118,76 L124,68 L130,76 L126,76 L130,82 L126,82 L128,92Z" fill="#22c55e"/>
+                </g>
+                <circle cx="100" cy="100" r="85" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.15" class="planet-halo"/>
+            </svg>
+        </div>
+
+        <h1 class="hero-title aos" data-aos="fade-up">
+            <span class="glow-text">Making CI/CD</span>
+            <br>Sustainable
+        </h1>
+        <p class="hero-subtitle aos" data-aos="fade-up" data-aos-delay="100">
+            AI-powered pipeline analysis. Eliminate wasted compute. See the environmental impact.
+        </p>
+
+        <!-- ═══ Analysis Form ═══ -->
+        <div class="analysis-card glass-card aos" data-aos="fade-up" data-aos-delay="200">
+            <div class="card-glow"></div>
+            <h2><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Analyze Your Pipeline</h2>
+            <div class="form-group">
+                <label for="project-id">GITLAB PROJECT ID</label>
+                <input type="text" id="project-id" placeholder="e.g. 80426748" class="input-field">
+            </div>
+            <div class="form-row">
+                <label class="toggle-label">
+                    <input type="checkbox" id="dry-run" checked>
+                    <span class="toggle-switch"></span>
+                    <span>Dry Run <small>(analyze only, no MR)</small></span>
+                </label>
+            </div>
+            <button class="btn-launch" id="btn-analyze" onclick="startAnalysis()"
+                    data-tippy-content="ECOOPS will analyze recent commits, detect wasted CI jobs, and propose optimized rules. Run Dry‑run first to preview."
+                    data-tippy-placement="top">
+                <svg class="btn-rocket" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>
+                <span class="btn-text">Launch Analysis</span>
+            </button>
+            <div class="config-status" id="config-status"></div>
+        </div>
+    </div>
+
+    <!-- ═══ Scroll Storyline: The Problem ═══ -->
+    <div class="storyline-section aos" data-aos="fade-up" id="story-problem">
+        <div class="story-row">
+            <div class="story-visual">
+                <svg viewBox="0 0 200 140" class="story-svg">
+                    <!-- Noisy pipeline: jobs firing everywhere -->
+                    <rect x="10" y="30" width="180" height="80" rx="8" fill="none" stroke="#ef4444" stroke-width="0.8" opacity="0.3"/>
+                    <g class="noisy-jobs">
+                        <rect x="20" y="40" width="30" height="12" rx="3" fill="#ef4444" opacity="0.4" class="noisy-job j1"/>
+                        <rect x="55" y="40" width="30" height="12" rx="3" fill="#ef4444" opacity="0.5" class="noisy-job j2"/>
+                        <rect x="90" y="40" width="30" height="12" rx="3" fill="#f59e0b" opacity="0.4" class="noisy-job j3"/>
+                        <rect x="125" y="40" width="30" height="12" rx="3" fill="#ef4444" opacity="0.3" class="noisy-job j4"/>
+                        <rect x="160" y="40" width="20" height="12" rx="3" fill="#f59e0b" opacity="0.5" class="noisy-job j5"/>
+                        <rect x="20" y="58" width="25" height="12" rx="3" fill="#f59e0b" opacity="0.4" class="noisy-job j6"/>
+                        <rect x="50" y="58" width="35" height="12" rx="3" fill="#ef4444" opacity="0.5" class="noisy-job j7"/>
+                        <rect x="90" y="58" width="28" height="12" rx="3" fill="#ef4444" opacity="0.3" class="noisy-job j8"/>
+                        <rect x="123" y="58" width="32" height="12" rx="3" fill="#f59e0b" opacity="0.4" class="noisy-job j9"/>
+                        <rect x="20" y="76" width="40" height="12" rx="3" fill="#ef4444" opacity="0.5" class="noisy-job j10"/>
+                        <rect x="65" y="76" width="28" height="12" rx="3" fill="#f59e0b" opacity="0.3" class="noisy-job j11"/>
+                        <rect x="98" y="76" width="35" height="12" rx="3" fill="#ef4444" opacity="0.4" class="noisy-job j12"/>
+                        <rect x="138" y="76" width="30" height="12" rx="3" fill="#f59e0b" opacity="0.5" class="noisy-job j13"/>
+                    </g>
+                    <text x="100" y="106" text-anchor="middle" fill="#ef4444" font-size="8" opacity="0.6">13 jobs × every commit = waste</text>
+                    <!-- Smoke/CO2 rising -->
+                    <circle cx="50" cy="22" r="4" fill="#ef4444" opacity="0.15" class="smoke s1"/>
+                    <circle cx="100" cy="18" r="5" fill="#ef4444" opacity="0.1" class="smoke s2"/>
+                    <circle cx="150" cy="20" r="3.5" fill="#ef4444" opacity="0.12" class="smoke s3"/>
+                </svg>
+            </div>
+            <div class="story-text">
+                <h3 class="story-label">The Problem</h3>
+                <p>Every job on every commit = <strong>wasted compute, cash, and CO₂.</strong></p>
+                <p class="story-detail">Most CI pipelines blindly run every job on every push, even when files haven't changed.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Scroll Storyline: The Solution ═══ -->
+    <div class="storyline-section aos" data-aos="fade-up" id="story-solution">
+        <div class="story-row">
+            <div class="story-text">
+                <h3 class="story-label" style="color: var(--green)">The ECOOPS Solution</h3>
+                <p>AI analyzes your pipeline, detects waste, and <strong>auto-optimizes</strong> your CI config.</p>
+                <p class="story-detail">6 steps, fully automated. From scanning to a merge request — in under a minute.</p>
+            </div>
+            <div class="story-visual">
+                <svg viewBox="0 0 200 140" class="story-svg">
+                    <!-- Clean pipeline: minimal, efficient -->
+                    <rect x="10" y="30" width="180" height="80" rx="8" fill="none" stroke="#22c55e" stroke-width="0.8" opacity="0.3"/>
+                    <rect x="20" y="45" width="45" height="14" rx="4" fill="#22c55e" opacity="0.3"/>
+                    <rect x="75" y="45" width="45" height="14" rx="4" fill="#22c55e" opacity="0.4"/>
+                    <rect x="130" y="45" width="45" height="14" rx="4" fill="#22c55e" opacity="0.3"/>
+                    <text x="42" y="55" text-anchor="middle" fill="#22c55e" font-size="6" opacity="0.7">build</text>
+                    <text x="97" y="55" text-anchor="middle" fill="#22c55e" font-size="6" opacity="0.7">test</text>
+                    <text x="152" y="55" text-anchor="middle" fill="#22c55e" font-size="6" opacity="0.7">deploy</text>
+                    <!-- Skip indicators per job -->
+                    <text x="42" y="76" text-anchor="middle" fill="#22c55e" font-size="7" opacity="0.5">skip ✓</text>
+                    <text x="97" y="76" text-anchor="middle" fill="#22c55e" font-size="7" opacity="0.5">skip ✓</text>
+                    <text x="152" y="76" text-anchor="middle" fill="#22c55e" font-size="7" opacity="0.5">skip ✓</text>
+                    <!-- Arrows -->
+                    <path d="M68,52 L72,52" stroke="#22c55e" stroke-width="1" opacity="0.4" marker-end="url(#arrow)"/>
+                    <path d="M123,52 L127,52" stroke="#22c55e" stroke-width="1" opacity="0.4"/>
+                    <!-- Tree sprout -->
+                    <path d="M100,90 L100,108 M96,104 L100,108 L104,104" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" opacity="0.6"/>
+                    <text x="100" y="122" text-anchor="middle" fill="#22c55e" font-size="6.5" opacity="0.5">rules:changes → only relevant jobs run</text>
+                </svg>
+            </div>
+        </div>
+    </div>
+
+    <!-- Feature Cards (steps overview) -->
+    <div class="features-row">
+        <div class="feature-card glass-card aos" data-aos="fade-up" data-aos-delay="100"
+             data-tippy-content="Cross-references 50+ commits with job execution to find wasted compute">
+            <svg class="feature-svg" viewBox="0 0 48 48"><circle cx="24" cy="12" r="8" fill="none" stroke="#22c55e" stroke-width="1.5"/><path d="M24 20v12M18 26l6-6 6 6" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round"/><path d="M8 40h32" stroke="#22c55e" stroke-width="1" opacity="0.3"/></svg>
+            <h3>Smart Analysis</h3>
+            <p>AI cross-references commits with job dependencies to find waste</p>
+        </div>
+        <div class="feature-card glass-card aos" data-aos="fade-up" data-aos-delay="200"
+             data-tippy-content="Adds rules:changes: blocks so jobs only run when relevant files change">
+            <svg class="feature-svg" viewBox="0 0 48 48"><rect x="10" y="10" width="28" height="28" rx="3" fill="none" stroke="#22c55e" stroke-width="1.5"/><path d="M18 20h12M18 26h8M18 32h10" stroke="#22c55e" stroke-width="1.5" stroke-linecap="round"/><path d="M36 6l4 4M8 42l4-4" stroke="#22c55e" stroke-width="1" opacity="0.4"/></svg>
+            <h3>Auto-Optimize</h3>
+            <p>Generates <code>rules:changes:</code> blocks to skip irrelevant jobs</p>
+        </div>
+        <div class="feature-card glass-card aos" data-aos="fade-up" data-aos-delay="300"
+             data-tippy-content="Converts saved minutes to CO₂, energy, cost, and tree equivalency using IEA and EPA data">
+            <svg class="feature-svg" viewBox="0 0 48 48"><circle cx="24" cy="24" r="16" fill="none" stroke="#22c55e" stroke-width="1.5"/><ellipse cx="24" cy="24" rx="16" ry="6" fill="none" stroke="#22c55e" stroke-width="0.8" opacity="0.5"/><path d="M20 18 L22 12 L18 12 L24 4 L30 12 L26 12 L28 18" fill="#22c55e" opacity="0.6"/></svg>
+            <h3>Green Impact</h3>
+            <p>Calculates CO₂, energy, and cost savings with tree equivalency</p>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Progress Section ═══ -->
+<section class="progress-section" id="progress-section" style="display:none">
+    <h2 class="section-title">
+        <svg class="spin-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/></svg>
+        Analyzing Pipeline...
+    </h2>
+    <div class="steps-grid" id="steps-timeline">
+        <!-- Step 1 -->
+        <div class="step-card glass-card aos-step" data-step="1" data-tippy-content="Fetches commits, CI config, and repo file tree from GitLab API">
+            <div class="step-icon-wrap">
+                <svg viewBox="0 0 64 64" class="step-svg"><path d="M8,32 Q20,20 32,32 Q44,44 56,32" fill="none" stroke="#22c55e" stroke-width="2" class="river-path"/><rect x="18" y="28" width="6" height="4" rx="1" fill="#22c55e" opacity="0.6" class="data-packet p1"/><rect x="34" y="30" width="6" height="4" rx="1" fill="#22c55e" opacity="0.4" class="data-packet p2"/><rect x="48" y="28" width="6" height="4" rx="1" fill="#22c55e" opacity="0.3" class="data-packet p3"/></svg>
+            </div>
+            <div class="step-info"><h3>📡 Fetch Data</h3><p class="step-desc">Pipeline River — gathering commit data</p><div class="step-logs" id="step-1-logs"></div></div>
+            <div class="step-status-indicator"></div>
+        </div>
+        <!-- Step 2 -->
+        <div class="step-card glass-card aos-step" data-step="2" data-tippy-content="Gemini 2.5 Flash analyzes commit diffs vs job dependencies to find waste">
+            <div class="step-icon-wrap">
+                <svg viewBox="0 0 64 64" class="step-svg"><path d="M10,50 Q20,35 32,42 Q44,48 54,38" fill="none" stroke="#22c55e" stroke-width="1" opacity="0.3"/><path d="M20,45 L22,38 L18,38 L24,28 L30,38 L26,38 L28,45Z" fill="#22c55e" opacity="0.4"/><path d="M38,42 L40,34 L36,34 L42,22 L48,34 L44,34 L46,42Z" fill="#22c55e" opacity="0.3"/><rect x="24" y="8" width="16" height="10" rx="2" fill="none" stroke="#22c55e" stroke-width="1.5"/><line x1="28" y1="18" x2="20" y2="50" stroke="#22c55e" stroke-width="0.8" opacity="0.5" class="scan-beam"/><line x1="36" y1="18" x2="44" y2="50" stroke="#22c55e" stroke-width="0.8" opacity="0.5" class="scan-beam"/></svg>
+            </div>
+            <div class="step-info"><h3>🔍 AI Waste Analysis</h3><p class="step-desc">Satellite Scanner — Gemini scanning patterns</p><div class="step-logs" id="step-2-logs"></div></div>
+            <div class="step-status-indicator"></div>
+        </div>
+        <!-- Step 3 -->
+        <div class="step-card glass-card aos-step" data-step="3" data-tippy-content="Generates optimized .gitlab-ci.yml with rules:changes: blocks">
+            <div class="step-icon-wrap">
+                <svg viewBox="0 0 64 64" class="step-svg"><rect x="12" y="8" width="40" height="48" rx="2" fill="none" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4 2" class="blueprint-border"/><path d="M32 18 L32 42 M26 34 L32 42 L38 34 M22 46 Q27 38 32 46 Q37 38 42 46" stroke="#22c55e" stroke-width="1.5" fill="none" stroke-linecap="round" class="blueprint-tree"/></svg>
+            </div>
+            <div class="step-info"><h3>⚙️ Generate YAML</h3><p class="step-desc">Blueprint Tree — engineering the config</p><div class="step-logs" id="step-3-logs"></div></div>
+            <div class="step-status-indicator"></div>
+        </div>
+        <!-- Step 4 -->
+        <div class="step-card glass-card aos-step" data-step="4" data-tippy-content="Validates the optimized YAML using GitLab CI Linter API">
+            <div class="step-icon-wrap">
+                <svg viewBox="0 0 64 64" class="step-svg"><path d="M32 8 L52 18 L52 36 Q52 52 32 58 Q12 52 12 36 L12 18 Z" fill="none" stroke="#22c55e" stroke-width="1.5" class="shield-path"/><path d="M28 38 L30 32 L26 32 L32 22 L38 32 L34 32 L36 38Z" fill="#22c55e" opacity="0.5" class="shield-seedling"/><path d="M24 34 L30 40 L42 26" stroke="#22c55e" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0" class="shield-check"/></svg>
+            </div>
+            <div class="step-info"><h3>🔧 Validate Config</h3><p class="step-desc">Shield + Check — linting the YAML</p><div class="step-logs" id="step-4-logs"></div></div>
+            <div class="step-status-indicator"></div>
+        </div>
+        <!-- Step 5: MR -->
+        <div class="step-card glass-card aos-step" data-step="5" id="step-5-item" style="display:none" data-tippy-content="Creates a branch, commits optimized YAML, and opens a Merge Request">
+            <div class="step-icon-wrap">
+                <svg viewBox="0 0 64 64" class="step-svg"><path d="M28 48 L32 20 L36 48Z" fill="none" stroke="#22c55e" stroke-width="1.5"/><path d="M26 48 Q32 42 38 48" fill="#22c55e" opacity="0.4"/><circle cx="32" cy="16" r="4" fill="none" stroke="#22c55e" stroke-width="1.5"/></svg>
+            </div>
+            <div class="step-info"><h3>📤 Create Merge Request</h3><p class="step-desc">Rocket Sapling — launching the MR</p><div class="step-logs" id="step-5-logs"></div></div>
+            <div class="step-status-indicator"></div>
+        </div>
+    </div>
+
+    <!-- ═══ Growing Tree Completion Section ═══ -->
+    <div class="growing-tree-section" id="growing-tree" style="display:none">
+        <div class="tree-stage">
+            <!-- SVG Tree -->
+            <div class="tree-canvas">
+                <svg viewBox="0 0 300 350" class="tree-svg" id="tree-svg">
+                    <defs>
+                        <radialGradient id="groundGlow" cx="50%" cy="50%"><stop offset="0%" stop-color="#22c55e" stop-opacity="0.15"/><stop offset="100%" stop-color="#22c55e" stop-opacity="0"/></radialGradient>
+                        <filter id="treeGlow"><feGaussianBlur stdDeviation="4" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    </defs>
+                    <!-- Ground -->
+                    <ellipse cx="150" cy="310" rx="130" ry="15" fill="url(#groundGlow)" class="tree-ground"/>
+                    <!-- Cumulative rings -->
+                    <circle cx="150" cy="310" r="30" fill="none" stroke="#22c55e" stroke-width="0.5" opacity="0" class="tree-ring ring-1"/>
+                    <circle cx="150" cy="310" r="50" fill="none" stroke="#22c55e" stroke-width="0.3" opacity="0" class="tree-ring ring-2"/>
+                    <circle cx="150" cy="310" r="70" fill="none" stroke="#22c55e" stroke-width="0.2" opacity="0" class="tree-ring ring-3"/>
+                    <!-- Trunk -->
+                    <rect x="143" y="310" width="14" height="0" rx="4" fill="#6B4F1D" class="tree-trunk" id="tree-trunk"/>
+                    <!-- Roots -->
+                    <path d="M150,310 Q125,320 100,315" stroke="#6B4F1D" stroke-width="2.5" fill="none" opacity="0" class="tree-root r1" stroke-linecap="round"/>
+                    <path d="M150,310 Q175,320 200,315" stroke="#6B4F1D" stroke-width="2.5" fill="none" opacity="0" class="tree-root r2" stroke-linecap="round"/>
+                    <!-- Canopy -->
+                    <path d="M150,135 L105,225 L125,225 L90,290 L210,290 L175,225 L195,225 Z" fill="#22c55e" opacity="0" class="canopy c1" filter="url(#treeGlow)"/>
+                    <path d="M150,100 L112,190 L130,190 L98,260 L202,260 L170,190 L188,190 Z" fill="#16a34a" opacity="0" class="canopy c2"/>
+                    <path d="M150,65 L120,155 L138,155 L110,230 L190,230 L162,155 L180,155 Z" fill="#10b981" opacity="0" class="canopy c3"/>
+                    <!-- Leaves -->
+                    <circle cx="115" cy="170" r="5" fill="#22c55e" opacity="0" class="leaf l1"/>
+                    <circle cx="180" cy="150" r="4" fill="#16a34a" opacity="0" class="leaf l2"/>
+                    <circle cx="135" cy="120" r="4.5" fill="#10b981" opacity="0" class="leaf l3"/>
+                    <circle cx="170" cy="195" r="4" fill="#22c55e" opacity="0" class="leaf l4"/>
+                    <circle cx="125" cy="210" r="5" fill="#16a34a" opacity="0" class="leaf l5"/>
+                    <circle cx="185" cy="180" r="3.5" fill="#10b981" opacity="0" class="leaf l6"/>
+                    <!-- Success halo -->
+                    <circle cx="150" cy="180" r="0" fill="none" stroke="#22c55e" stroke-width="2" opacity="0" class="success-halo" id="success-halo"/>
+                </svg>
+            </div>
+
+            <!-- ═══ Tree Info Panel ═══ -->
+            <div class="tree-info" id="tree-info">
+                <!-- Sapling waiting state -->
+                <div class="tree-waiting" id="tree-waiting">
+                    <p class="tree-muted">🌱 Awaiting your first ECOOPS optimization...</p>
+                </div>
+                <!-- Phase: Impact calculated -->
+                <div class="tree-impact" id="tree-impact" style="display:none">
+                    <h3 class="tree-impact-title">Your pipelines just got cleaner.</h3>
+                    <div class="tree-stats-row">
+                        <div class="tree-stat">
+                            <span class="tree-stat-icon">⏱️</span>
+                            <span class="tree-stat-text">This run avoided <strong id="ti-minutes">0</strong> minutes of redundant jobs.</span>
+                        </div>
+                        <div class="tree-stat">
+                            <span class="tree-stat-icon">🌍</span>
+                            <span class="tree-stat-text">That's ~<strong id="ti-energy">0 kWh</strong> and <strong id="ti-co2">0 kg</strong> CO₂ avoided, equivalent to <strong id="ti-trees">0</strong> trees/month.</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Phase: MR created -->
+                <div class="tree-complete" id="tree-complete" style="display:none">
+                    <h2 class="tree-headline-text">🌲 ECOOPS just made this pipeline greener.</h2>
+                    <p class="tree-subline">Review the MR to lock in <strong id="tc-minutes">0</strong> minutes saved and <strong id="tc-co2">0 kg</strong> CO₂ avoided each month.</p>
+                    <a href="#" id="tree-mr-link" class="tree-cta" target="_blank" style="display:none">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M14 10l6.1-6.1M10 5H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-5"/></svg>
+                        View ECOOPS MR on GitLab
+                    </a>
+                    <button class="tree-cta tree-cta-results" onclick="showResultsPage()">📊 View Full Green Impact Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Results Section ═══ -->
+<section class="results-section" id="results-section" style="display:none">
+    <div class="results-header aos" data-aos="fade-up">
+        <h2 class="section-title">🌱 Green Impact Report</h2>
+        <p class="results-project" id="results-project"></p>
+    </div>
+
+    <!-- KPI Biome Cards -->
+    <div class="kpi-grid">
+        <div class="kpi-card glass-card kpi-minutes aos" data-aos="fade-up" data-aos-delay="50"
+             data-tippy-content="Total CI runner minutes eliminated per month">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><line x1="0" y1="48" x2="80" y2="48" stroke="#22c55e" stroke-width="0.5" opacity="0.3"/><path d="M10,48 L12,38 L8,38 L14,28 L20,38 L16,38 L18,48Z" fill="#22c55e" opacity="0.7" class="biome-tree"/><path d="M30,48 L32,34 L28,34 L34,22 L40,34 L36,34 L38,48Z" fill="#16a34a" opacity="0.8" class="biome-tree"/><path d="M50,48 L52,36 L48,36 L54,24 L60,36 L56,36 L58,48Z" fill="#22c55e" opacity="0.6" class="biome-tree"/><path d="M68,48 L70,40 L66,40 L72,30 L78,40 L74,40 L76,48Z" fill="#16a34a" opacity="0.5" class="biome-tree"/></svg></div>
+            <div class="kpi-value" id="metric-minutes">0</div>
+            <div class="kpi-label">CI Minutes Saved / Month</div>
+        </div>
+        <div class="kpi-card glass-card kpi-cost aos" data-aos="fade-up" data-aos-delay="100"
+             data-tippy-content="Estimated cost savings at $0.008/minute (GitLab SaaS)">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><circle cx="40" cy="25" r="18" fill="none" stroke="#f59e0b" stroke-width="1" opacity="0.3"/><text x="40" y="30" text-anchor="middle" fill="#f59e0b" font-size="18" font-weight="700" opacity="0.6">$</text></svg></div>
+            <div class="kpi-value" id="metric-cost">$0.00</div>
+            <div class="kpi-label">Cost Saved / Month</div>
+        </div>
+        <div class="kpi-card glass-card kpi-co2 aos" data-aos="fade-up" data-aos-delay="150"
+             data-tippy-content="CO₂ prevented using IEA 2024 carbon intensity factor (0.385 kg/kWh)">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><circle cx="40" cy="25" r="16" fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.6"/><circle cx="40" cy="25" r="20" fill="none" stroke="#3b82f6" stroke-width="0.5" opacity="0.2" class="co2-halo"/><circle cx="40" cy="25" r="24" fill="none" stroke="#3b82f6" stroke-width="0.3" opacity="0.1" class="co2-halo"/><path d="M36 20 L38 14 L34 14 L40 6 L46 14 L42 14 L44 20Z" fill="#22c55e" opacity="0.5"/></svg></div>
+            <div class="kpi-value"><span id="metric-co2">0</span> <small>kg</small></div>
+            <div class="kpi-label">CO₂ Avoided / Month</div>
+        </div>
+        <div class="kpi-card glass-card kpi-trees aos" data-aos="fade-up" data-aos-delay="200"
+             data-tippy-content="Trees needed to absorb the same CO₂ (EPA: 21.77 kg CO₂/tree/year)">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><path d="M40 48 L40 20" stroke="#22c55e" stroke-width="2"/><path d="M30 30 L32 22 L28 22 L34 12 L40 22 L36 22 L38 30Z" fill="#22c55e" opacity="0.7"/><path d="M42 30 L44 22 L40 22 L46 12 L52 22 L48 22 L50 30Z" fill="#16a34a" opacity="0.7"/><circle cx="40" cy="48" r="8" fill="none" stroke="#22c55e" stroke-width="0.8" opacity="0.3" class="tree-ring r1"/><circle cx="40" cy="48" r="12" fill="none" stroke="#22c55e" stroke-width="0.5" opacity="0.2" class="tree-ring r2"/></svg></div>
+            <div class="kpi-value" id="metric-trees">0</div>
+            <div class="kpi-label">Tree Equivalent</div>
+        </div>
+        <div class="kpi-card glass-card kpi-energy aos" data-aos="fade-up" data-aos-delay="250"
+             data-tippy-content="Energy saved based on 0.5 kWh/hour of cloud compute">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><path d="M40 5 L32 25 L38 25 L34 45 L50 20 L42 20 L48 5Z" fill="none" stroke="#14b8a6" stroke-width="1.5" opacity="0.6"/><path d="M40 5 L32 25 L38 25 L34 45 L50 20 L42 20 L48 5Z" fill="#14b8a6" opacity="0.15"/></svg></div>
+            <div class="kpi-value"><span id="metric-energy">0</span> <small>kWh</small></div>
+            <div class="kpi-label">Energy Saved / Month</div>
+        </div>
+        <div class="kpi-card glass-card kpi-waste aos" data-aos="fade-up" data-aos-delay="300"
+             data-tippy-content="Percentage of CI job runs that were unnecessary">
+            <div class="kpi-biome"><svg viewBox="0 0 80 50" class="biome-svg"><circle cx="40" cy="25" r="18" fill="none" stroke="#ef4444" stroke-width="1.5" opacity="0.4"/><path d="M40 7 A18 18 0 0 1 40 43" fill="none" stroke="#ef4444" stroke-width="3" opacity="0.6" stroke-linecap="round"/><path d="M40 7 A18 18 0 0 0 40 43" fill="none" stroke="#22c55e" stroke-width="3" opacity="0.6" stroke-linecap="round"/></svg></div>
+            <div class="kpi-value"><span id="metric-waste-pct">0</span><small>%</small></div>
+            <div class="kpi-label">Waste Detected</div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="charts-row">
+        <div class="chart-card glass-card aos" data-aos="fade-right"><h3>Pipeline Efficiency</h3><div class="chart-wrap"><canvas id="waste-chart"></canvas></div></div>
+        <div class="chart-card glass-card aos" data-aos="fade-left"><h3>Annual Savings Projection</h3><div class="chart-wrap"><canvas id="savings-chart"></canvas></div></div>
+    </div>
+
+    <!-- YAML + Analysis -->
+    <div class="detail-row">
+        <div class="detail-card glass-card aos" data-aos="fade-up">
+            <div class="detail-header"><h3>📝 YAML Changes</h3><div class="tab-group"><button class="tab active" onclick="showYamlTab('before')">Before</button><button class="tab" onclick="showYamlTab('after')">After</button></div></div>
+            <pre class="code-block" id="yaml-before"></pre>
+            <pre class="code-block" id="yaml-after" style="display:none"></pre>
+        </div>
+        <div class="detail-card glass-card aos" data-aos="fade-up">
+            <div class="detail-header"><h3>🔍 Waste Analysis</h3></div>
+            <div class="analysis-content" id="waste-detail"></div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-card glass-card aos" data-aos="fade-up">
+        <h3>📈 Annual Projection</h3>
+        <table class="data-table"><thead><tr><th>Metric</th><th>Monthly</th><th>Annual</th></tr></thead><tbody>
+            <tr><td>⏱️ Compute Saved</td><td id="tbl-monthly-minutes">—</td><td id="tbl-annual-hours">—</td></tr>
+            <tr><td>💵 Cost Saved</td><td id="tbl-monthly-cost">—</td><td id="tbl-annual-cost">—</td></tr>
+            <tr><td>🌍 CO₂ Avoided</td><td id="tbl-monthly-co2">—</td><td id="tbl-annual-co2">—</td></tr>
+            <tr><td>⚡ Energy Saved</td><td id="tbl-monthly-energy">—</td><td id="tbl-annual-energy">—</td></tr>
+            <tr><td>🌳 Tree Equivalent</td><td id="tbl-monthly-trees">—</td><td id="tbl-annual-trees">—</td></tr>
+        </tbody></table>
+    </div>
+
+    <!-- MR Card -->
+    <div class="mr-card glass-card" id="mr-card" style="display:none">
+        <div class="mr-badge">
+            <svg width="24" height="24" viewBox="0 0 48 48" fill="none" stroke="#22c55e" stroke-width="2"><path d="M24 4 L24 28 M18 20 L24 28 L30 20"/><path d="M12 36 Q18 28 24 36 Q30 28 36 36" fill="#22c55e" opacity="0.3"/></svg>
+            This MR plants <strong id="mr-trees">+0.00</strong> trees/month equivalent 🌱
+        </div>
+        <a href="#" id="mr-link" target="_blank" class="mr-link-btn">View Merge Request on GitLab →</a>
+    </div>
+
+    <!-- Methodology -->
+    <div class="method-card glass-card aos" data-aos="fade-up">
+        <h3>📏 Methodology</h3>
+        <table class="data-table"><thead><tr><th>Factor</th><th>Value</th><th>Source</th></tr></thead><tbody>
+            <tr><td>CI Runner Cost</td><td>$0.008/min</td><td>GitLab SaaS medium</td></tr>
+            <tr><td>Server Power</td><td>0.5 kWh/hour</td><td>Cloud compute avg</td></tr>
+            <tr><td>Carbon Intensity</td><td>0.385 kg CO₂/kWh</td><td>IEA 2024 global</td></tr>
+            <tr><td>Tree Absorption</td><td>21.77 kg CO₂/month</td><td>EPA estimate</td></tr>
+        </tbody></table>
+    </div>
+
+    <!-- Run Again Button -->
+    <div class="run-again-wrap" id="run-again-wrap">
+        <button class="btn-run-again" id="btn-run-again" onclick="runAgain()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+            <span>Run New Analysis</span>
+        </button>
+    </div>
+
+    <div class="footer"><p>Generated by <strong>ECOOPS 🌱</strong> — Emission Cost Optimizer — Operations Pipeline System</p></div>
+</section>
+
+<!-- ═══ Floating Ecosystem Assistant ═══ -->
+<div class="floating-assistant" id="floating-assistant">
+    <button class="assistant-bubble" id="assistant-bubble" onclick="toggleAssistant()"
+            data-tippy-content="Need help decoding your pipelines? I can walk you through this run."
+            data-tippy-placement="left"
+            data-tippy-trigger="mouseenter">
+        <svg viewBox="0 0 40 40" class="assistant-icon">
+            <circle cx="20" cy="20" r="18" fill="none" stroke="#22c55e" stroke-width="1.5" opacity="0.4"/>
+            <path d="M20 10 L20 24 M16 18 L20 24 L24 18" stroke="#22c55e" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 30 Q16 24 20 30 Q24 24 28 30" fill="#22c55e" opacity="0.5"/>
+        </svg>
+    </button>
+    <div class="assistant-panel glass-card" id="assistant-panel" style="display:none">
+        <div class="assistant-header">
+            <span>🌱 ECOOPS Assistant</span>
+            <button class="assistant-close" onclick="toggleAssistant()">✕</button>
+        </div>
+        <div class="assistant-body" id="assistant-body">
+            <div class="assistant-msg">
+                <p><strong>Welcome to ECOOPS!</strong></p>
+                <p>I'll guide you through optimizing your CI/CD pipeline for sustainability.</p>
+            </div>
+            <div class="assistant-msg">
+                <p>📋 <strong>Quick Start:</strong></p>
+                <ol>
+                    <li>Enter your GitLab Project ID above</li>
+                    <li>Toggle "Dry Run" for a safe preview</li>
+                    <li>Click "Launch Analysis" — I'll handle the rest</li>
+                </ol>
+            </div>
+            <div class="assistant-msg">
+                <p>💡 <strong>Tip:</strong> Start with Dry Run to see savings without creating a merge request.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Error Modal -->
+<div class="modal-overlay" id="error-modal" style="display:none">
+    <div class="modal glass-card">
+        <h3>❌ Error</h3>
+        <p id="error-message"></p>
+        <button class="btn-launch" onclick="closeError()">Try Again</button>
+    </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

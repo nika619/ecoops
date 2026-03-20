@@ -8,7 +8,7 @@ Tests for the Green Impact Report generation logic:
 """
 
 import unittest
-from reporter import parse_waste_metrics, calculate_savings, generate_impact_report
+from backend.services.reporter import parse_waste_metrics, calculate_savings, generate_impact_report
 
 
 # Sample Gemini waste analysis output (realistic format)
@@ -47,6 +47,41 @@ SAMPLE_WASTE_ANALYSIS = """### Pipeline Waste Analysis
 
 EMPTY_ANALYSIS = "No waste detected."
 
+# Gemini output WITHOUT Summary section — the exact bug scenario
+NO_SUMMARY_ANALYSIS = """### Pipeline Waste Analysis
+
+**Commits Analyzed**: 10
+**Date Range**: 2026-03-19 to 2026-03-20
+
+#### Wasted Jobs Found:
+
+-   **Job Name**: lint
+-   **Stage**: lint
+-   **Relevant Paths**: `demo/sample-app/**/*.py`
+-   **Total Runs**: 10
+-   **Wasted Runs**: 7
+-   **Waste Percentage**: 70%
+-   **Avg Duration**: 60s
+-   **Total Wasted Minutes**: 7
+
+-   **Job Name**: build
+-   **Stage**: build
+-   **Relevant Paths**: `demo/sample-app/**/*.py`
+-   **Total Runs**: 10
+-   **Wasted Runs**: 6
+-   **Waste Percentage**: 60%
+-   **Avg Duration**: 180s
+-   **Total Wasted Minutes**: 18
+
+-   **Job Name**: test
+-   **Stage**: test
+-   **Relevant Paths**: `demo/sample-app/**/*.py`
+-   **Total Runs**: 10
+-   **Wasted Runs**: 6
+-   **Waste Percentage**: 60%
+-   **Avg Duration**: 120s
+"""
+
 
 class TestParseWasteMetrics(unittest.TestCase):
     """Tests for parse_waste_metrics()."""
@@ -74,6 +109,20 @@ class TestParseWasteMetrics(unittest.TestCase):
         self.assertEqual(metrics["commits_analyzed"], 20)
         # Other fields default
         self.assertEqual(metrics["total_wasted_runs"], 0)
+
+    def test_no_summary_fallback(self):
+        """When Gemini omits Summary, per-job data should be summed."""
+        metrics = parse_waste_metrics(NO_SUMMARY_ANALYSIS)
+        # Should sum per-job wasted minutes: 7 + 18 = 25
+        self.assertEqual(metrics["total_wasted_minutes"], 25.0)
+        # Should sum per-job wasted runs: 7 + 6 + 6 = 19
+        self.assertEqual(metrics["total_wasted_runs"], 19)
+        # Should average per-job waste %: (70+60+60)/3 = 63.3
+        self.assertAlmostEqual(metrics["waste_percentage"], 63.3, places=0)
+        # Should extract commits from header
+        self.assertEqual(metrics["commits_analyzed"], 10)
+        # Should extract days from date range (Mar 19-20 = 1 day)
+        self.assertGreaterEqual(metrics["days_analyzed"], 1)
 
 
 class TestCalculateSavings(unittest.TestCase):
