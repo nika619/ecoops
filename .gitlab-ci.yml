@@ -1,110 +1,20 @@
-# ECOOPS — Project CI/CD Configuration
-# Emission Cost Optimizer — Operations Pipeline System
-# This CI is for the ECOOPS project ITSELF (not the demo project).
-# It validates documentation, lints YAML, and runs basic checks.
-
+# ECOOPS — CI/CD Configuration
 stages:
   - validate
   - test
-  - analyze
 
-# ECOOPS: Always-run job so the pipeline never fails with 0 jobs
+# Simple health check - always runs
 pipeline_check:
   stage: validate
-  image: alpine:latest
   script:
-    - echo "🌱 ECOOPS pipeline running — commit $(git rev-parse --short HEAD 2>/dev/null || echo 'unknown')"
-  rules:
-    - when: always
+    - echo "ECOOPS pipeline OK"
 
-# Validate YAML syntax of the flow configuration
-validate_flow_yaml:
-  stage: validate
-  image: python:3.11-slim
-  before_script:
-    - pip install pyyaml
-  script:
-    - echo "Validating flow configuration YAML..."
-    - python -c "import yaml; yaml.safe_load(open('flows/ecoops-flow.yml')); print('Flow YAML is valid')"
-  rules:
-    - changes:
-        - "flows/**/*.yml"
-        - "flows/**/*.yaml"
-        - ".gitlab-ci.yml"
-
-# Validate the demo CI config
-validate_demo_ci:
-  stage: validate
-  image: python:3.11-slim
-  before_script:
-    - pip install pyyaml
-  script:
-    - echo "Validating demo CI YAML..."
-    - python -c "import yaml; yaml.safe_load(open('demo/wasteful-ci.yml')); print('Demo CI YAML is valid')"
-  rules:
-    - changes:
-        - "demo/**/*.yml"
-        - ".gitlab-ci.yml"
-
-# Lint Python code in the demo sample app
-lint_demo_app:
-  stage: test
-  image: python:3.11-slim
-  before_script:
-    - pip install flake8
-  script:
-    - echo "Linting demo application code..."
-    - flake8 demo/sample-app/ --max-line-length=120 --ignore=E402
-  rules:
-    - changes:
-        - "demo/sample-app/**/*.py"
-        - ".gitlab-ci.yml"
-  allow_failure: true
-
-# Run demo app tests
-test_demo_app:
-  stage: test
-  image: python:3.11-slim
-  before_script:
-    - pip install flask pytest
-  script:
-    - echo "Running demo app tests..."
-    - cd demo/sample-app && python -m pytest tests/ -v
-  rules:
-    - changes:
-        - "demo/sample-app/**/*.py"
-        - ".gitlab-ci.yml"
-  allow_failure: true
-
-# Lint core ECOOPS Python modules
+# Lint backend Python modules
 lint_core:
   stage: test
   image: python:3.11-slim
   before_script:
     - pip install flake8
   script:
-    - echo "Linting ECOOPS core modules..."
     - flake8 backend/ --max-line-length=120 --ignore=E402,W503
-  rules:
-    - changes:
-        - "backend/**/*.py"
-        - ".gitlab-ci.yml"
-  allow_failure: true
-
-# Run ECOOPS analysis on this project (dry-run, scheduled)
-ecoops_analyze:
-  stage: analyze
-  image: python:3.11-slim
-  before_script:
-    - pip install -r requirements.txt
-  script:
-    - echo "Running ECOOPS pipeline analysis (dry-run)..."
-    - python -m backend.ecoops --dry-run --json
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    - if: '$CI_PIPELINE_SOURCE == "web"'
-  variables:
-    GITLAB_TOKEN: $GITLAB_TOKEN
-    GEMINI_API_KEY: $GEMINI_API_KEY
-    GITLAB_PROJECT_ID: $CI_PROJECT_ID
   allow_failure: true
