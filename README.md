@@ -42,6 +42,10 @@ It comes with two interfaces:
 - **🌐 3D Web Dashboard** — An immersive React/Three.js experience with step-by-step pipeline analysis
 - **⌨️ CLI** — Single-command analysis for CI integration
 
+### 3D Dashboard Preview
+
+![ECOOPS 3D Dashboard](docs/images/dashboard-3d.png)
+
 ---
 
 ## 🏗️ Architecture
