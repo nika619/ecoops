@@ -34,7 +34,7 @@ const STEP_DATA: Record<number, StepInfo> = {
   },
   6: {
     title: 'Step 6: Green Impact',
-    desc: 'Merge Request created with full Green Impact Report! 1,680 minutes saved. Equivalent to 5.4 kg CO₂ avoided per month.',
+    desc: 'Analysis complete! Review the Green Impact Report with CO₂, cost, and energy savings.',
     icon: '🌱',
   },
 };
@@ -43,9 +43,31 @@ interface UIOverlayProps {
   currentStep: number;
   onNext: () => void;
   onPrev: () => void;
+  isAnalyzing?: boolean;
+  projectId?: string;
+  onProjectIdChange?: (id: string) => void;
+  dryRun?: boolean;
+  onDryRunChange?: (v: boolean) => void;
+  onLaunch?: () => void;
+  backendReady?: boolean;
+  error?: string | null;
+  logs?: string[];
 }
 
-export default function UIOverlay({ currentStep, onNext, onPrev }: UIOverlayProps) {
+export default function UIOverlay({
+  currentStep,
+  onNext,
+  onPrev,
+  isAnalyzing = false,
+  projectId = '',
+  onProjectIdChange,
+  dryRun = true,
+  onDryRunChange,
+  onLaunch,
+  backendReady = false,
+  error,
+  logs = [],
+}: UIOverlayProps) {
   const data = STEP_DATA[currentStep];
 
   const btnStyle = (disabled: boolean): CSSProperties => ({
@@ -165,8 +187,21 @@ export default function UIOverlay({ currentStep, onNext, onPrev }: UIOverlayProp
           </div>
         </div>
 
-        {/* Step indicator dots */}
+        {/* Step indicator dots + status */}
         <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {isAnalyzing && (
+            <span
+              style={{
+                color: '#00ffcc',
+                fontFamily: "'Space Grotesk', monospace",
+                fontSize: '11px',
+                letterSpacing: '0.1em',
+                animation: 'pulse 1.5s infinite',
+              }}
+            >
+              ● ANALYZING
+            </span>
+          )}
           {[1, 2, 3, 4, 5, 6].map((s) => (
             <div
               key={s}
@@ -188,8 +223,164 @@ export default function UIOverlay({ currentStep, onNext, onPrev }: UIOverlayProp
         </div>
       </div>
 
-      {/* Main Glass Card — compact at Step 6 to avoid overlap */}
-      {currentStep === 6 ? (
+      {/* Main Glass Card */}
+      {currentStep === 1 && !isAnalyzing ? (
+        /* Step 1 idle: Show launch controls */
+        <div
+          style={{
+            background: 'rgba(18, 18, 31, 0.7)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+            border: '1px solid rgba(0, 255, 204, 0.15)',
+            borderRadius: '16px',
+            padding: '32px',
+            width: '440px',
+            pointerEvents: 'auto',
+            alignSelf: 'flex-start',
+            boxShadow: '0 8px 32px rgba(0, 255, 204, 0.08), inset 0 1px 0 rgba(0, 255, 204, 0.1)',
+          }}
+        >
+          <div style={{ fontSize: '32px', marginBottom: '8px' }}>🚀</div>
+          <h2
+            style={{
+              color: '#e3e0f3',
+              margin: '0 0 16px 0',
+              fontFamily: "'Space Grotesk', sans-serif",
+              fontSize: '22px',
+              fontWeight: 700,
+            }}
+          >
+            Analyze Your Pipeline
+          </h2>
+
+          {/* Project ID input */}
+          <label
+            style={{
+              color: 'rgba(0, 255, 204, 0.6)',
+              fontSize: '11px',
+              fontFamily: "'Space Grotesk', monospace",
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+            }}
+          >
+            GitLab Project ID
+          </label>
+          <input
+            type="text"
+            value={projectId}
+            onChange={(e) => onProjectIdChange?.(e.target.value)}
+            placeholder="e.g. 80454464"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              marginTop: '6px',
+              marginBottom: '16px',
+              background: 'rgba(5, 5, 15, 0.8)',
+              border: '1px solid rgba(0, 255, 204, 0.2)',
+              borderRadius: '8px',
+              color: '#e3e0f3',
+              fontFamily: "'Space Grotesk', monospace",
+              fontSize: '16px',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
+          />
+
+          {/* Dry Run toggle */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+              marginBottom: '20px',
+            }}
+          >
+            <div
+              onClick={() => onDryRunChange?.(!dryRun)}
+              style={{
+                width: '44px',
+                height: '24px',
+                borderRadius: '12px',
+                background: dryRun
+                  ? 'linear-gradient(135deg, #00ffcc, #00e0b3)'
+                  : 'rgba(80, 80, 100, 0.5)',
+                cursor: 'pointer',
+                position: 'relative',
+                transition: 'background 0.3s',
+              }}
+            >
+              <div
+                style={{
+                  width: '18px',
+                  height: '18px',
+                  borderRadius: '50%',
+                  background: '#fff',
+                  position: 'absolute',
+                  top: '3px',
+                  left: dryRun ? '23px' : '3px',
+                  transition: 'left 0.3s',
+                }}
+              />
+            </div>
+            <span
+              style={{
+                color: 'rgba(185, 203, 194, 0.7)',
+                fontFamily: "'Space Grotesk', monospace",
+                fontSize: '13px',
+              }}
+            >
+              Dry Run <span style={{ opacity: 0.5 }}>(analyze only, no MR)</span>
+            </span>
+          </div>
+
+          {/* Error display */}
+          {error && (
+            <div
+              style={{
+                padding: '10px 14px',
+                marginBottom: '16px',
+                background: 'rgba(255, 34, 68, 0.1)',
+                border: '1px solid rgba(255, 34, 68, 0.3)',
+                borderRadius: '8px',
+                color: '#ff4466',
+                fontSize: '13px',
+                fontFamily: "'Space Grotesk', monospace",
+              }}
+            >
+              ⚠️ {error}
+            </div>
+          )}
+
+          {/* Launch button */}
+          <button
+            onClick={onLaunch}
+            disabled={!projectId || !backendReady}
+            style={{
+              ...btnStyle(!projectId || !backendReady),
+              width: '100%',
+              padding: '16px',
+              fontSize: '16px',
+            }}
+          >
+            🌱 Launch Analysis
+          </button>
+
+          {/* Status indicators */}
+          <div
+            style={{
+              marginTop: '16px',
+              display: 'flex',
+              gap: '16px',
+              color: 'rgba(185, 203, 194, 0.5)',
+              fontSize: '12px',
+              fontFamily: "'Space Grotesk', monospace",
+            }}
+          >
+            <span>{backendReady ? '✅' : '❌'} Backend</span>
+            <span>{projectId ? '✅' : '⬜'} Project ID</span>
+          </div>
+        </div>
+      ) : currentStep === 6 ? (
         /* Step 6: minimal compact controls */
         <div
           style={{
@@ -222,7 +413,7 @@ export default function UIOverlay({ currentStep, onNext, onPrev }: UIOverlayProp
           </span>
         </div>
       ) : (
-        /* Steps 1-5: full glass card */
+        /* Steps 2-5: step info card with live log */
         <div
           style={{
             background: 'rgba(18, 18, 31, 0.7)',
@@ -258,17 +449,39 @@ export default function UIOverlay({ currentStep, onNext, onPrev }: UIOverlayProp
               lineHeight: '1.7',
               fontFamily: "'Manrope', sans-serif",
               fontSize: '14px',
-              margin: '0 0 24px 0',
+              margin: '0 0 16px 0',
             }}
           >
             {data.desc}
           </p>
 
+          {/* Live log feed */}
+          {logs.length > 0 && (
+            <div
+              style={{
+                background: 'rgba(0, 0, 0, 0.4)',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                marginBottom: '16px',
+                maxHeight: '80px',
+                overflowY: 'auto',
+                fontFamily: "'Space Grotesk', monospace",
+                fontSize: '11px',
+                color: 'rgba(0, 255, 204, 0.6)',
+                lineHeight: 1.6,
+              }}
+            >
+              {logs.slice(-4).map((log, i) => (
+                <div key={i}>› {log}</div>
+              ))}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button onClick={onPrev} disabled={currentStep === 1} style={btnStyle(currentStep === 1)}>
+            <button onClick={onPrev} disabled={currentStep === 1 || isAnalyzing} style={btnStyle(currentStep === 1 || isAnalyzing)}>
               ← Prev
             </button>
-            <button onClick={onNext} disabled={currentStep === 6} style={btnStyle(currentStep === 6)}>
+            <button onClick={onNext} disabled={currentStep === 6 || isAnalyzing} style={btnStyle(currentStep === 6 || isAnalyzing)}>
               Next →
             </button>
           </div>

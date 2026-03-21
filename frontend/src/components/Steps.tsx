@@ -429,7 +429,10 @@ export function Step5({ position, isActive }: StepProps) {
 // ImpactMetricCard removed — replaced by FinalResultsScene
 
 
-export function Step6({ position, isActive }: StepProps) {
+export function Step6({ position, isActive, metrics, diff }: StepProps & {
+  metrics?: { minutes_saved: number; cost_reduced: number; energy_kwh: number; co2_kg: number; trees: number };
+  diff?: { removed: string; added: string };
+}) {
   const leavesRef = useRef<THREE.Mesh>(null);
   const treeGroupRef = useRef<THREE.Group>(null);
 
@@ -493,7 +496,7 @@ export function Step6({ position, isActive }: StepProps) {
       </group>
 
       {/* Full holographic results scene — surrounds the tree */}
-      {isActive && <FinalResultsScene />}
+      {isActive && <FinalResultsScene metrics={metrics} diff={diff} />}
 
       <pointLight position={[0, 3, 3]} color="#00ffcc" intensity={isActive ? 8 : 1} distance={15} />
     </group>

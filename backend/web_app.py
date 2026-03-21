@@ -36,6 +36,15 @@ app = Flask(__name__,
             static_folder=os.path.join(_ROOT, "static"))
 app.secret_key = os.urandom(24)
 
+
+@app.after_request
+def add_cors_headers(response):
+    """Allow cross-origin requests from the 3D frontend."""
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    return response
+
 # ── Global state for SSE progress ───────────────────────────
 progress_queues = {}
 

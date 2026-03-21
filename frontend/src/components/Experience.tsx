@@ -8,9 +8,20 @@ const SPACING = 30;
 
 interface ExperienceProps {
   currentStep: number;
+  metrics?: {
+    minutes_saved: number;
+    cost_reduced: number;
+    energy_kwh: number;
+    co2_kg: number;
+    trees: number;
+  };
+  diff?: {
+    removed: string;
+    added: string;
+  };
 }
 
-export default function Experience({ currentStep }: ExperienceProps) {
+export default function Experience({ currentStep, metrics, diff }: ExperienceProps) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionProgress, setTransitionProgress] = useState(0);
 
@@ -46,7 +57,12 @@ export default function Experience({ currentStep }: ExperienceProps) {
         <Step3 position={[2 * SPACING, 0, 0]} isActive={currentStep === 3} />
         <Step4 position={[3 * SPACING, 0, 0]} isActive={currentStep === 4} />
         <Step5 position={[4 * SPACING, 0, 0]} isActive={currentStep === 5} />
-        <Step6 position={[5 * SPACING, 0, 0]} isActive={currentStep === 6} />
+        <Step6
+          position={[5 * SPACING, 0, 0]}
+          isActive={currentStep === 6}
+          metrics={metrics}
+          diff={diff}
+        />
       </group>
     </>
   );
