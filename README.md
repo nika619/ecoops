@@ -31,18 +31,16 @@ This waste translates directly to:
 
 ## 💡 The Solution
 
-**ECOOPS** is an AI-powered Python tool that uses **Google Gemini 2.0** and the **GitLab REST API** to:
+**ECOOPS** is an AI-powered tool that uses **Google Gemini 2.0** and the **GitLab REST API** to:
 
 1. **Analyze** your pipeline history and commit diffs to find wasted compute
 2. **Optimize** your `.gitlab-ci.yml` with smart `rules:changes:` blocks
 3. **Report** the environmental and cost savings in a Green Impact Report
 4. **Create** a Merge Request with the optimized config + full impact analysis
 
-Single command — zero configuration required.
-
-```bash
-python ecoops.py --project-id YOUR_PROJECT_ID
-```
+It comes with two interfaces:
+- **🌐 3D Web Dashboard** — An immersive React/Three.js experience with step-by-step pipeline analysis
+- **⌨️ CLI** — Single-command analysis for CI integration
 
 ---
 
@@ -50,7 +48,7 @@ python ecoops.py --project-id YOUR_PROJECT_ID
 
 ```mermaid
 graph LR
-    A["👤 User runs<br/>python ecoops.py"] --> B["📡 GitLab REST API<br/>Fetch pipelines, commits, diffs"]
+    A["👤 User runs<br/>ECOOPS"] --> B["📡 GitLab REST API<br/>Fetch pipelines, commits, diffs"]
     B --> C["🤖 Gemini 2.0 Flash<br/>Analyze waste patterns"]
     C --> D["⚙️ Gemini 2.0 Flash<br/>Generate optimized YAML"]
     D --> E["🔧 GitLab CI Linter<br/>Validate YAML"]
@@ -84,6 +82,7 @@ graph LR
 ### Prerequisites
 
 - Python 3.9+
+- Node.js 18+ (for 3D dashboard)
 - A GitLab project with CI/CD history (10+ commits recommended)
 - GitLab Personal Access Token (with `api` scope)
 - Google Gemini API key ([get one free](https://aistudio.google.com/apikey))
@@ -92,10 +91,10 @@ graph LR
 
 ```bash
 # Clone the repository
-git clone https://gitlab.com/nika619/ecoops.git
+git clone https://gitlab.com/sungodnikaa69-group/ecoops.git
 cd ecoops
 
-# Install dependencies
+# Install Python dependencies
 pip install -r requirements.txt
 
 # Configure API keys
@@ -103,17 +102,38 @@ cp .env.example .env
 # Edit .env with your GITLAB_TOKEN, GEMINI_API_KEY, and GITLAB_PROJECT_ID
 ```
 
-### Run
+### Run — CLI
 
 ```bash
 # Full optimization (creates branch + MR)
-python ecoops.py --project-id YOUR_PROJECT_ID
+python -m backend.ecoops --project-id YOUR_PROJECT_ID
 
 # Dry run (analyze only, no changes)
-python ecoops.py --project-id YOUR_PROJECT_ID --dry-run
+python -m backend.ecoops --project-id YOUR_PROJECT_ID --dry-run
 
 # JSON output for CI integration
-python ecoops.py --project-id YOUR_PROJECT_ID --json
+python -m backend.ecoops --project-id YOUR_PROJECT_ID --json
+```
+
+### Run — 3D Web Dashboard
+
+```bash
+# Start the Flask backend
+flask --app backend.web_app run --port 5001
+
+# In a new terminal — start the 3D frontend
+cd frontend
+npm install
+npm run dev
+# Visit http://localhost:5173
+```
+
+### Run — 2D Web Dashboard
+
+```bash
+# Start the Flask app (includes built-in dashboard)
+flask --app backend.web_app run --port 5001
+# Visit http://localhost:5001
 ```
 
 ### Environment Variables
@@ -224,31 +244,77 @@ See [full methodology documentation](docs/green-impact-methodology.md) for detai
 
 ```
 ecoops/
-├── ecoops.py                      # Main CLI entrypoint (orchestrator)
-├── gitlab_client.py               # GitLab REST API v4 client
-├── gemini_client.py               # Google Gemini AI client
-├── reporter.py                    # Green Impact Report generator
-├── test_api.py                    # API connectivity tests
-├── test_reporter.py               # Reporter unit tests
-├── requirements.txt               # Python dependencies
-├── .env.example                   # Environment variable template
-├── .gitlab-ci.yml                 # Project CI/CD config
-├── AGENTS.md                      # Agent guidelines
-├── LICENSE                        # MIT License
-├── agents/                        # System prompts (reference)
+├── backend/                        # Python backend
+│   ├── ecoops.py                   # CLI entrypoint (orchestrator)
+│   ├── web_app.py                  # Flask web dashboard + API
+│   ├── config.py                   # Configuration constants
+│   ├── services/
+│   │   ├── gemini_client.py        # Google Gemini AI client
+│   │   └── reporter.py            # Green Impact Report generator
+│   └── utils/
+│       ├── gitlab_client.py        # GitLab REST API v4 client
+│       ├── run_logger.py           # Analysis run logger
+│       └── shared_utils.py         # Shared utility functions
+│
+├── frontend/                       # 3D React/Three.js dashboard
+│   ├── src/
+│   │   ├── App.tsx                 # Main application component
+│   │   ├── components/
+│   │   │   ├── Experience.tsx      # 3D scene orchestrator
+│   │   │   ├── CameraController.tsx # Animated camera transitions
+│   │   │   ├── DataHighway.tsx     # Data visualization scene
+│   │   │   ├── YamlDiffDisplays.tsx # YAML before/after comparison
+│   │   │   ├── FinalResultsScene.tsx # Impact dashboard scene
+│   │   │   ├── StepCard.tsx        # Step navigation UI
+│   │   │   ├── UIOverlay.tsx       # HUD overlay elements
+│   │   │   └── ActionConsole.tsx   # Console output panel
+│   │   └── index.css               # Global styles
+│   └── package.json                # Node.js dependencies
+│
+├── templates/
+│   ├── web/dashboard.html          # 2D web dashboard template
+│   └── green-impact-report.md      # Report template
+├── static/                         # CSS + JS for 2D dashboard
+│
+├── tests/                          # Unit tests
+│   ├── test_gitlab_client.py
+│   ├── test_gemini_client.py
+│   ├── test_reporter.py
+│   ├── test_run_logger.py
+│   └── test_api.py
+│
+├── agents/                         # Agent system prompts
 │   ├── pipeline-analyzer.md
 │   ├── yaml-optimizer.md
 │   └── green-impact-reporter.md
 ├── flows/
-│   └── ecoops-flow.yml            # Flow config (reference)
+│   └── ecoops-flow.yml             # Flow configuration
 ├── demo/
-│   ├── wasteful-ci.yml            # Intentionally wasteful CI (for demo)
-│   └── sample-app/                # Sample Python app
+│   ├── wasteful-ci.yml             # Intentionally wasteful CI (for demo)
+│   └── sample-app/                 # Sample Python app
 ├── docs/
-│   ├── green-impact-methodology.md
-│   └── agent-setup-guide.md
-└── templates/
-    └── green-impact-report.md
+│   ├── green-impact-methodology.md # Impact calculation methodology
+│   └── agent-setup-guide.md        # Setup documentation
+├── logs/                           # Analysis run logs (auto-generated)
+│
+├── .gitlab-ci.yml                  # Project CI/CD configuration
+├── requirements.txt                # Python dependencies
+├── .env.example                    # Environment variable template
+├── AGENTS.md                       # Agent guidelines
+├── LICENSE                         # MIT License
+└── README.md
+```
+
+---
+
+## 🧪 Testing
+
+```bash
+# Run all tests
+pytest tests/ -v
+
+# Run with coverage
+pytest tests/ -v --cov=backend --cov-report=html
 ```
 
 ---

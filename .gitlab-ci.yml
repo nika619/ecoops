@@ -17,4 +17,14 @@ lint_core:
     - pip install flake8
   script:
     - flake8 backend/ --max-line-length=120 --ignore=E402,W503,E501
+
+# Run unit tests
+test_core:
+  stage: test
+  image: python:3.11-slim
+  before_script:
+    - pip install -r requirements.txt
+    - pip install pytest pytest-cov
+  script:
+    - pytest tests/ -v --cov=backend --cov-report=term-missing
   allow_failure: true
