@@ -45,6 +45,7 @@ def add_cors_headers(response):
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
+
 # ── Global state for SSE progress ───────────────────────────
 progress_queues = {}
 
