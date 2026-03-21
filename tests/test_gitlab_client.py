@@ -33,7 +33,7 @@ class TestGitLabClientRequests(unittest.TestCase):
     def setUp(self):
         self.client = GitLabClient("token", 999)
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_get_project(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -49,7 +49,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         self.assertEqual(result["name"], "test-project")
         self.assertEqual(result["default_branch"], "main")
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_fetch_commits(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -63,7 +63,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         self.assertEqual(len(commits), 2)
         self.assertEqual(commits[0]["title"], "Initial commit")
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_validate_ci_yaml_valid(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -74,7 +74,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         self.assertTrue(result["valid"])
         self.assertEqual(result["errors"], [])
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_validate_ci_yaml_invalid(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -88,7 +88,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         self.assertFalse(result["valid"])
         self.assertIn("at least one visible job", result["errors"][0])
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_retry_on_429(self, mock_requests):
         """Should retry up to max_retries on 429 responses."""
         rate_resp = MagicMock()
@@ -105,7 +105,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         self.assertEqual(mock_requests.get.call_count, 2)
         self.assertEqual(result.json()["id"], 999)
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_get_file_content(self, mock_requests):
         import base64
         content = base64.b64encode(b"stages:\n  - test\n").decode()
@@ -117,7 +117,7 @@ class TestGitLabClientRequests(unittest.TestCase):
         result = self.client.get_file_content(".gitlab-ci.yml")
         self.assertIn("stages:", result)
 
-    @patch("gitlab_client.requests")
+    @patch("backend.utils.gitlab_client.requests")
     def test_create_branch(self, mock_requests):
         mock_resp = MagicMock()
         mock_resp.status_code = 201
