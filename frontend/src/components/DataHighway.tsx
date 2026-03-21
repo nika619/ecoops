@@ -13,7 +13,7 @@ function generateHighwayPoints(): THREE.Vector3[] {
   }
 
   const points: THREE.Vector3[] = [];
-  const segments = 200;
+  const segments = 100;
 
   for (let i = 0; i < segments; i++) {
     const t = i / (segments - 1);
@@ -117,7 +117,7 @@ export default function DataHighway({ currentStep, isTransitioning, transitionPr
 
             {/* Station glow sphere */}
             {(isActive || isCompleted) && (
-              <Sphere args={[0.2, 16, 16]}>
+              <Sphere args={[0.2, 12, 12]}>
                 <meshBasicMaterial
                   color="#00ffcc"
                   toneMapped={false}
@@ -138,12 +138,12 @@ export default function DataHighway({ currentStep, isTransitioning, transitionPr
       })}
 
       {/* The Data Pulse — the bright sphere traveling the highway */}
-      <Sphere ref={pulseRef} args={[0.35, 16, 16]}>
+      <Sphere ref={pulseRef} args={[0.35, 12, 12]}>
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </Sphere>
 
       {/* Pulse outer glow */}
-      <Sphere ref={pulseGlowRef} args={[0.7, 16, 16]}>
+      <Sphere ref={pulseGlowRef} args={[0.7, 12, 12]}>
         <meshBasicMaterial
           color="#00ffcc"
           toneMapped={false}
@@ -155,7 +155,7 @@ export default function DataHighway({ currentStep, isTransitioning, transitionPr
       {/* Pulse point light (follows pulse) */}
       <pointLight
         color="#00ffcc"
-        intensity={5}
+        intensity={3}
         distance={8}
         position={[0, 0, 0]}
         ref={(light) => {

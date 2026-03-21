@@ -120,11 +120,11 @@ function PulseRings() {
   return (
     <group position={[0, -3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <mesh ref={ring1Ref}>
-        <ringGeometry args={[3, 3.1, 64]} />
+        <ringGeometry args={[3, 3.1, 32]} />
         <meshStandardMaterial emissive="#00ffcc" emissiveIntensity={2} color="#003322" transparent opacity={0.3} side={THREE.DoubleSide} />
       </mesh>
       <mesh ref={ring2Ref}>
-        <ringGeometry args={[3, 3.1, 64]} />
+        <ringGeometry args={[3, 3.1, 32]} />
         <meshStandardMaterial emissive="#00ffcc" emissiveIntensity={2} color="#003322" transparent opacity={0.3} side={THREE.DoubleSide} />
       </mesh>
     </group>

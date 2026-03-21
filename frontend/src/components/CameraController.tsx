@@ -3,12 +3,14 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 
 const SPACING = 30;
-const TRANSITION_DURATION = 1.2; // seconds
+const TRANSITION_DURATION = 1.5; // seconds — slower = smoother
 
-/** Hermite smoothstep for buttery ease-in-out */
+/** Quintic ease-in-out for ultra-smooth transitions */
 function smoothstep(t: number): number {
   t = Math.max(0, Math.min(1, t));
-  return t * t * (3 - 2 * t);
+  return t < 0.5
+    ? 16 * t * t * t * t * t
+    : 1 - Math.pow(-2 * t + 2, 5) / 2;
 }
 
 interface CameraControllerProps {

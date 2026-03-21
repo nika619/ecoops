@@ -28,7 +28,7 @@ function CommitParticles({ count, isActive }: { count: number; isActive: boolean
   }, [count]);
 
   useFrame((state) => {
-    if (!meshRef.current) return;
+    if (!meshRef.current || !isActive) return;
     const t = state.clock.elapsedTime;
     particles.forEach((p, i) => {
       const angle = t * p.speed + p.offset;
@@ -37,7 +37,7 @@ function CommitParticles({ count, isActive }: { count: number; isActive: boolean
         p.y + Math.sin(t * p.speed * 0.5) * p.tilt,
         Math.sin(angle) * p.radius
       );
-      dummy.scale.setScalar(isActive ? 0.08 : 0.04);
+      dummy.scale.setScalar(0.08);
       dummy.updateMatrix();
       meshRef.current!.setMatrixAt(i, dummy.matrix);
     });
@@ -71,7 +71,7 @@ export function Step1({ position, isActive }: StepProps) {
     <group position={position}>
       <group ref={groupRef}>
         <Float speed={2} rotationIntensity={0.3} floatIntensity={0.5}>
-          <Sphere args={[2, 32, 32]}>
+          <Sphere args={[2, 24, 24]}>
             <meshStandardMaterial
               color="#000"
               emissive="#fc6d26"
@@ -80,13 +80,13 @@ export function Step1({ position, isActive }: StepProps) {
             />
           </Sphere>
         </Float>
-        <CommitParticles count={80} isActive={isActive} />
+        <CommitParticles count={40} isActive={isActive} />
       </group>
       {/* Point light for atmosphere */}
       <pointLight
         position={[0, 0, 0]}
         color="#fc6d26"
-        intensity={isActive ? 8 : 1}
+        intensity={isActive ? 5 : 0.5}
         distance={15}
       />
     </group>
@@ -172,7 +172,7 @@ export function Step2({ position, isActive }: StepProps) {
         </Octahedron>
       </Float>
       <AnalysisParticles isActive={isActive} />
-      <pointLight position={[0, 0, 0]} color="#4285f4" intensity={isActive ? 6 : 1} distance={12} />
+      <pointLight position={[0, 0, 0]} color="#4285f4" intensity={isActive ? 4 : 0.5} distance={12} />
     </group>
   );
 }
@@ -299,7 +299,7 @@ export function Step4({ position, isActive }: StepProps) {
       </Box>
 
       {/* Success pulse ring */}
-      <Ring ref={ringRef} args={[2, 2.2, 64]} position={[0, 0, 0]}>
+      <Ring ref={ringRef} args={[2, 2.2, 32]} position={[0, 0, 0]}>
         <meshStandardMaterial
           emissive="#00ffcc"
           emissiveIntensity={isActive ? 3 : 0}

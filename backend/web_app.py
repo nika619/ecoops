@@ -90,8 +90,13 @@ def analyze():
     dry_run = data.get("dry_run", True)
     session_id = data.get("session_id", "default")
 
+    # Parse project_id (fallback to .env value)
     if not project_id:
-        return jsonify({"error": "Project ID is required"}), 400
+        project_id = os.getenv("GITLAB_PROJECT_ID", "")
+    try:
+        project_id = int(project_id)
+    except (ValueError, TypeError):
+        return jsonify({"error": f"Invalid Project ID: '{project_id}'"}), 400
 
     gitlab_token = os.getenv("GITLAB_TOKEN")
     gemini_key = os.getenv("GEMINI_API_KEY")
@@ -104,7 +109,7 @@ def analyze():
     # Run analysis in background thread
     thread = threading.Thread(
         target=run_analysis,
-        args=(session_id, int(project_id), gitlab_token, gemini_key, dry_run),
+        args=(session_id, project_id, gitlab_token, gemini_key, dry_run),
         daemon=True
     )
     thread.start()

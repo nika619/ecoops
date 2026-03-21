@@ -16,27 +16,169 @@ html, body, #root {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Prevent text selection on UI overlay */
-.no-select {
-  user-select: none;
-  -webkit-user-select: none;
+/* ── Entrance Reveal Animations ───────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Smooth transitions for buttons */
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeSlideLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes scaleReveal {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 255, 204, 0.15); }
+  50%      { box-shadow: 0 0 35px rgba(0, 255, 204, 0.3), 0 0 60px rgba(0, 255, 204, 0.1); }
+}
+
+/* ── Smooth Loader ─────────────────────────────────── */
+@keyframes loaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes loaderFadeIn {
+  from { opacity: 0; transform: scale(0.8); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes loaderFadeOut {
+  from { opacity: 1; }
+  to   { opacity: 0; pointer-events: none; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ── Dock Slide Up (ActionConsole) ─────────────────── */
+@keyframes dockSlideUp {
+  from { opacity: 0; transform: translate(-50%, 40px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* ── Analyzing Pulse ──────────────────────────────── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+/* ── Progress Glow ────────────────────────────────── */
+@keyframes progressGlow {
+  0%, 100% { filter: brightness(1); }
+  50%      { filter: brightness(1.4); }
+}
+
+/* ── Micro-interaction Ripple ─────────────────────── */
+@keyframes ripple {
+  from { transform: scale(0); opacity: 0.6; }
+  to   { transform: scale(2.5); opacity: 0; }
+}
+
+/* ── Step Dot Bounce on Active ────────────────────── */
+@keyframes dotBounce {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(1.3); }
+}
+
+/* ── Card Entrance ────────────────────────────────── */
+.card-enter {
+  animation: fadeSlideLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.card-enter-delayed {
+  opacity: 0;
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.15s forwards;
+}
+
+/* ── Parallax Container ───────────────────────────── */
+.parallax-layer {
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+}
+
+/* ── Hover Effects ─────────────────────────────────── */
 button {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
 }
 
 button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
+  transform: translateY(-2px);
+  filter: brightness(1.15);
 }
 
 button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.97);
+  transition-duration: 0.1s;
 }
 
-/* Canvas cursor */
+/* Ripple pseudo-element */
+button::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translate(-50%, -50%) scale(0);
+  opacity: 0;
+}
+
+button:active::after {
+  animation: ripple 0.5s ease-out;
+}
+
+/* ── Glass Card Hover ─────────────────────────────── */
+.glass-card {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+}
+
+.glass-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0, 255, 204, 0.12), inset 0 1px 0 rgba(0, 255, 204, 0.15);
+  border-color: rgba(0, 255, 204, 0.3);
+}
+
+/* ── Input Focus Effect ───────────────────────────── */
+input {
+  transition: all 0.3s ease;
+}
+
+input:focus {
+  border-color: rgba(0, 255, 204, 0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0, 255, 204, 0.08), 0 0 20px rgba(0, 255, 204, 0.1) !important;
+}
+
+/* ── Toggle Micro-interaction ─────────────────────── */
+.toggle-track {
+  transition: background 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+}
+
+.toggle-track:hover {
+  box-shadow: 0 0 12px rgba(0, 255, 204, 0.3);
+}
+
+.toggle-thumb {
+  transition: left 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+/* ── Canvas cursor ─────────────────────────────────── */
 canvas {
   cursor: grab;
 }
@@ -44,7 +186,33 @@ canvas:active {
   cursor: grabbing;
 }
 
-/* Custom scrollbar (hidden) */
+/* ── Custom scrollbar ─────────────────────────────── */
 ::-webkit-scrollbar {
-  display: none;
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 204, 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 204, 0.4);
+}
+
+/* ── Log Line Entrance ────────────────────────────── */
+@keyframes logSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.log-line {
+  animation: logSlideIn 0.25s ease-out forwards;
+}
+
+/* ── Prevent text selection on UI overlay ──────────── */
+.no-select {
+  user-select: none;
+  -webkit-user-select: none;
 }

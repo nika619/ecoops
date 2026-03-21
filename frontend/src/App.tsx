@@ -90,6 +90,56 @@ export default function App() {
       }
     : undefined;
 
+/** Smooth Loading Screen — shown while 3D assets load */
+function LoadingScreen() {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        background: '#050510',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 100,
+        animation: 'loaderFadeIn 0.5s ease-out',
+      }}
+    >
+      {/* Spinning ring */}
+      <div
+        style={{
+          width: '48px',
+          height: '48px',
+          border: '3px solid rgba(0, 255, 204, 0.1)',
+          borderTop: '3px solid #00ffcc',
+          borderRadius: '50%',
+          animation: 'loaderSpin 1s linear infinite',
+          marginBottom: '24px',
+        }}
+      />
+      {/* Shimmer text */}
+      <div
+        style={{
+          fontFamily: "'Space Grotesk', monospace",
+          fontSize: '14px',
+          letterSpacing: '0.2em',
+          background: 'linear-gradient(90deg, rgba(0,255,204,0.3), rgba(0,255,204,0.8), rgba(0,255,204,0.3))',
+          backgroundSize: '200% 100%',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          animation: 'shimmer 2s linear infinite',
+        }}
+      >
+        INITIALIZING ECOOPS
+      </div>
+    </div>
+  );
+}
+
   return (
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#050510', overflow: 'hidden', position: 'relative' }}>
       {/* 2D Glassmorphism UI HUD */}
@@ -114,8 +164,11 @@ export default function App() {
         onMerge={() => {
           if (analysisResult?.mr_url) {
             window.open(analysisResult.mr_url, '_blank');
+          } else if (dryRun) {
+            window.alert('🌿 This was a Dry Run — toggle Dry Run OFF and re-run to create a real Merge Request on GitLab!');
           } else {
-            alert('🌿 Run analysis with Dry Run OFF to create a Merge Request!');
+            // Fallback: open project MR list
+            window.open(`https://gitlab.com/sungodnikaa69-group/ecoops/-/merge_requests`, '_blank');
           }
         }}
         onViewReport={() => window.open('http://localhost:5001', '_blank')}
@@ -141,7 +194,7 @@ export default function App() {
         <directionalLight position={[10, 10, 5]} intensity={2} color="#00ffcc" />
         <directionalLight position={[-10, -10, -5]} intensity={1} color="#ff0055" />
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<LoadingScreen />}>
           <Experience
             currentStep={currentStep}
             metrics={liveMetrics}
@@ -150,8 +203,8 @@ export default function App() {
         </Suspense>
 
         {/* Cinematic Post-Processing */}
-        <EffectComposer disableNormalPass>
-          <Bloom luminanceThreshold={0.5} mipmapBlur intensity={2.0} />
+        <EffectComposer enableNormalPass={false}>
+          <Bloom luminanceThreshold={0.6} mipmapBlur intensity={1.2} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>
       </Canvas>
