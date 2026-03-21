@@ -6,7 +6,6 @@ dashboard (web_app.py).  Centralised here to avoid duplication.
 """
 
 import re
-from typing import List
 
 
 def format_commits_data(gitlab, commits: list) -> str:

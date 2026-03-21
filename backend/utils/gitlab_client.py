@@ -98,7 +98,7 @@ class GitLabClient:
         return self._get(
             f"/projects/{self.project_id}/pipelines",
             params={"per_page": per_page, "status": status,
-                     "order_by": "id", "sort": "desc"}
+                    "order_by": "id", "sort": "desc"}
         )
 
     def fetch_pipeline_jobs(self, pipeline_id: int) -> List[Dict]:
@@ -151,7 +151,7 @@ class GitLabClient:
         return self._get_all_pages(
             f"/projects/{self.project_id}/repository/tree",
             params={"path": path, "ref": ref,
-                     "recursive": str(recursive).lower()}
+                    "recursive": str(recursive).lower()}
         )
 
     # ── CI Linter ───────────────────────────────────────────────

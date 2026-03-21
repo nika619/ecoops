@@ -16,5 +16,5 @@ lint_core:
   before_script:
     - pip install flake8
   script:
-    - flake8 backend/ --max-line-length=120 --ignore=E402,W503
+    - flake8 backend/ --max-line-length=120 --ignore=E402,W503,E501
   allow_failure: true

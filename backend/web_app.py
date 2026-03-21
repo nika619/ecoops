@@ -20,11 +20,11 @@ from dotenv import load_dotenv
 
 from backend.utils.gitlab_client import GitLabClient
 from backend.services.gemini_client import GeminiClient, QuotaExhaustedError
-from backend.services.reporter import (parse_waste_metrics, calculate_savings,
-                      generate_impact_report)
+from backend.services.reporter import (
+    parse_waste_metrics, calculate_savings, generate_impact_report)
 from backend.utils.run_logger import save_run_log
-from backend.utils.shared_utils import (format_commits_data, format_repo_tree,
-                          count_optimized_jobs)
+from backend.utils.shared_utils import (
+    format_commits_data, format_repo_tree, count_optimized_jobs)
 
 load_dotenv()
 
@@ -116,13 +116,14 @@ def progress(session_id):
                 if event in ("complete", "error"):
                     break
             except queue.Empty:
-                yield f"event: ping\ndata: {{}}\n\n"
+                yield "event: ping\ndata: {}\n\n"
 
-    return Response(generate(), mimetype="text/event-stream",
-                    headers={
-                        "Cache-Control": "no-cache",
-                        "X-Accel-Buffering": "no",
-                    })
+    return Response(
+        generate(), mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        })
 
 
 # ── Analysis Pipeline ───────────────────────────────────────
@@ -220,8 +221,8 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
             "icon": "⚙️", "status": "running"
         })
 
-        optimized_yaml = gemini.generate_optimized_yaml(ci_yaml,
-                                                         waste_analysis)
+        optimized_yaml = gemini.generate_optimized_yaml(
+            ci_yaml, waste_analysis)
 
         emit(session_id, "step", {
             "step": 3, "title": "Generating Optimized YAML",
@@ -288,9 +289,11 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                 mr = gitlab.create_merge_request(
                     source_branch=branch,
                     target_branch=default_branch,
-                    title=f"🌱 ECOOPS: Optimize pipeline to save "
-                          f"{int(savings['monthly']['minutes_saved'])} "
-                          f"CI minutes/month",
+                    title=(
+                        f"🌱 ECOOPS: Optimize pipeline to save "
+                        f"{int(savings['monthly']['minutes_saved'])} "
+                        f"CI minutes/month"
+                    ),
                     description=(
                         "This MR optimizes `.gitlab-ci.yml` by adding "
                         "`rules:changes:` blocks.\n\n"
@@ -339,7 +342,7 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
 
         emit(session_id, "complete", result_data)
 
-    except QuotaExhaustedError as e:
+    except QuotaExhaustedError:
         emit(session_id, "error", {
             "message": "Gemini API quota exhausted. Please use a different API key or wait and retry."
         })

@@ -7,7 +7,6 @@ Handles interactions with the Google Gemini API for:
 """
 
 import logging
-import time
 from google import genai
 from backend.config import GEMINI_MODEL
 

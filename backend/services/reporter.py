@@ -5,7 +5,6 @@ Calculates environmental and cost impact from CI optimization
 and generates the Green Impact Report.
 """
 
-import math
 from typing import Dict
 import re
 

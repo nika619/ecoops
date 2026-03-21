@@ -28,7 +28,7 @@ from backend.services.gemini_client import GeminiClient
 from backend.services.reporter import generate_impact_report, parse_waste_metrics, calculate_savings
 from backend.utils.run_logger import save_run_log
 from backend.utils.shared_utils import (format_commits_data, format_repo_tree,
-                          count_optimized_jobs, parse_monthly_minutes)
+                                        count_optimized_jobs, parse_monthly_minutes)
 
 
 def print_banner() -> None:
@@ -170,7 +170,7 @@ def main() -> None:
         optimized_yaml = gemini.generate_optimized_yaml(ci_yaml,
                                                         waste_analysis)
         logger.info(f"   ✅ Optimized YAML generated ({len(optimized_yaml)}"
-              f" bytes)")
+                    f" bytes)")
     except Exception as e:
         logger.error(f"❌ YAML optimization failed: {e}")
         sys.exit(1)
