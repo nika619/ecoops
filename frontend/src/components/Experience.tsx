@@ -1,13 +1,21 @@
-import { useState, useCallback } from 'react';
-import { Environment, Stars } from '@react-three/drei';
-import { Step1, Step2, Step3, Step4, Step5, Step6 } from './Steps';
+import { ScrollControls, Scroll, Environment } from '@react-three/drei';
+import { ProgressProvider } from '../ProgressContext';
+import CameraRig from './CameraRig';
 import DataHighway from './DataHighway';
-import CameraController from './CameraController';
+import Section1Rack from './Section1Rack';
+import Section2Scanner from './Section2Scanner';
+import Section3Matrix from './Section3Matrix';
+import Section4Fork from './Section4Fork';
+import Section5Impact from './Section5Impact';
+import TypographySeq from './TypographySeq';
+import { SCROLL_PAGES } from '../curveConfig';
 
-const SPACING = 30;
-
+/**
+ * Experience — Master scroll-driven 3D scene.
+ * Wrapped in ProgressProvider so DataHighway and CameraRig share
+ * pulse progress via context ref (instead of scene.traverse).
+ */
 interface ExperienceProps {
-  currentStep: number;
   metrics?: {
     minutes_saved: number;
     cost_reduced: number;
@@ -15,55 +23,33 @@ interface ExperienceProps {
     co2_kg: number;
     trees: number;
   };
-  diff?: {
-    removed: string;
-    added: string;
-  };
+  currentStep?: number;
+  totalSteps?: number;
+  isAnalyzing?: boolean;
 }
 
-export default function Experience({ currentStep, metrics, diff }: ExperienceProps) {
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionProgress, setTransitionProgress] = useState(0);
-
-  const handleTransitionUpdate = useCallback((transitioning: boolean, progress: number) => {
-    setIsTransitioning(transitioning);
-    setTransitionProgress(progress);
-  }, []);
-
+export default function Experience({ metrics, currentStep = 0, totalSteps = 5, isAnalyzing = false }: ExperienceProps) {
   return (
-    <>
-      {/* Smooth Camera Controller — replaces CameraControls teleport */}
-      <CameraController
-        currentStep={currentStep}
-        onTransitionUpdate={handleTransitionUpdate}
-      />
+    <ProgressProvider>
+      <Environment preset="night" environmentIntensity={0.05} />
+      <ambientLight intensity={0.05} />
 
-      <Environment preset="city" environmentIntensity={0.08} />
-      <Stars radius={200} depth={80} count={3000} factor={4} saturation={0.2} fade speed={1} />
+      <ScrollControls pages={SCROLL_PAGES} damping={0.12}>
+        <CameraRig currentStep={currentStep} totalSteps={totalSteps} isAnalyzing={isAnalyzing} />
+        <DataHighway currentStep={currentStep} totalSteps={totalSteps} isAnalyzing={isAnalyzing} />
 
-      {/* Fog for depth */}
-      <fog attach="fog" args={['#050510', 20, 80]} />
+        <group>
+          <Section1Rack />
+          <Section2Scanner />
+          <Section3Matrix />
+          <Section4Fork />
+          <Section5Impact metrics={metrics} />
+        </group>
 
-      {/* The Energy Stream — glowing highway connecting all steps */}
-      <DataHighway
-        currentStep={currentStep}
-        isTransitioning={isTransitioning}
-        transitionProgress={transitionProgress}
-      />
-
-      <group>
-        <Step1 position={[0 * SPACING, 0, 0]} isActive={currentStep === 1} />
-        <Step2 position={[1 * SPACING, 0, 0]} isActive={currentStep === 2} />
-        <Step3 position={[2 * SPACING, 0, 0]} isActive={currentStep === 3} />
-        <Step4 position={[3 * SPACING, 0, 0]} isActive={currentStep === 4} />
-        <Step5 position={[4 * SPACING, 0, 0]} isActive={currentStep === 5} />
-        <Step6
-          position={[5 * SPACING, 0, 0]}
-          isActive={currentStep === 6}
-          metrics={metrics}
-          diff={diff}
-        />
-      </group>
-    </>
+        <Scroll html style={{ width: '100vw' }}>
+          <TypographySeq metrics={metrics} />
+        </Scroll>
+      </ScrollControls>
+    </ProgressProvider>
   );
 }

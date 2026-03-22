@@ -19,6 +19,7 @@ lint_core:
     - flake8 backend/ --max-line-length=120 --ignore=E402,W503,E501
 
 # Run unit tests
+# ECOOPS: Added rules:changes to reduce waste
 test_core:
   stage: test
   image: python:3.11-slim
@@ -27,4 +28,8 @@ test_core:
     - pip install pytest pytest-cov
   script:
     - pytest tests/ -v --cov=backend --cov-report=term-missing
-  allow_failure: true
+  rules:
+    - changes:
+      - "backend/**/*.py"
+      - "tests/**/*.py"
+      - ".gitlab-ci.yml"

@@ -1,169 +1,94 @@
 import { useRef, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Line, Sphere } from '@react-three/drei';
+import { useScroll } from '@react-three/drei';
 import * as THREE from 'three';
+import { HIGHWAY_CURVE, STATION_POSITIONS } from '../curveConfig';
+import { useProgress } from '../ProgressContext';
 
-const SPACING = 30;
-
-/** Generate curving points between all 6 stations */
-function generateHighwayPoints(): THREE.Vector3[] {
-  const stations: [number, number, number][] = [];
-  for (let i = 0; i < 6; i++) {
-    stations.push([i * SPACING, 0, 0]);
-  }
-
-  const points: THREE.Vector3[] = [];
-  const segments = 100;
-
-  for (let i = 0; i < segments; i++) {
-    const t = i / (segments - 1);
-    const x = t * (5 * SPACING);
-    // Gentle wave on Y and Z for organic feel
-    const y = Math.sin(t * Math.PI * 3) * 0.6 + Math.sin(t * Math.PI * 7) * 0.15;
-    const z = Math.cos(t * Math.PI * 2.5) * 0.4;
-    points.push(new THREE.Vector3(x, y, z));
-  }
-
-  return points;
-}
-
+/**
+ * DataHighway — The glowing wire + step-driven data pulse.
+ * Pulse only moves when analysis steps fire. Uses shared ProgressContext
+ * instead of injecting properties on scene objects.
+ */
 interface DataHighwayProps {
   currentStep: number;
-  isTransitioning: boolean;
-  transitionProgress: number; // 0-1 progress during transition
+  totalSteps: number;
+  isAnalyzing: boolean;
 }
 
-/** The glowing fiber-optic "Energy Stream" connecting all 6 pipeline stations */
-export default function DataHighway({ currentStep, isTransitioning, transitionProgress }: DataHighwayProps) {
+export default function DataHighway({ currentStep, totalSteps, isAnalyzing }: DataHighwayProps) {
   const pulseRef = useRef<THREE.Mesh>(null);
   const pulseGlowRef = useRef<THREE.Mesh>(null);
+  const pulseLightRef = useRef<THREE.PointLight>(null);
+  const scroll = useScroll();
+  const smoothT = useRef(0);
+  const { progressRef } = useProgress();
 
-  const highwayPoints = useMemo(() => generateHighwayPoints(), []);
-  const linePoints = useMemo(() => highwayPoints.map(p => [p.x, p.y, p.z] as [number, number, number]), [highwayPoints]);
+  const tubeGeometry = useMemo(() => new THREE.TubeGeometry(HIGHWAY_CURVE, 256, 0.05, 8, false), []);
+  const tubeGlowGeometry = useMemo(() => new THREE.TubeGeometry(HIGHWAY_CURVE, 256, 0.12, 8, false), []);
 
-  // Data Pulse animation — travels along the highway
-  useFrame((state) => {
-    if (!pulseRef.current) return;
+  useFrame((state, delta) => {
+    if (!pulseRef.current || !pulseGlowRef.current) return;
     const t = state.clock.elapsedTime;
 
-    let pulsePos: number;
-    if (isTransitioning) {
-      // During transition: pulse moves from prev step to current step
-      const prevStep = Math.max(1, currentStep - 1);
-      const fromX = (prevStep - 1) * SPACING;
-      const toX = (currentStep - 1) * SPACING;
-      pulsePos = fromX + (toX - fromX) * transitionProgress;
-    } else {
-      // Idle: pulse gently oscillates around current station
-      const baseX = (currentStep - 1) * SPACING;
-      pulsePos = baseX + Math.sin(t * 2) * 1.5;
-    }
+    // Step-driven target
+    const stepT = (isAnalyzing || currentStep > 0)
+      ? Math.min(currentStep / totalSteps, 1.0)
+      : 0;
 
-    // Find the closest point on the highway curve for accurate Y/Z positioning
-    const normalizedT = Math.max(0, Math.min(1, pulsePos / (5 * SPACING)));
-    const index = Math.floor(normalizedT * (highwayPoints.length - 1));
-    const point = highwayPoints[Math.min(index, highwayPoints.length - 1)];
+    // Use whichever is further ahead: scroll or step progress
+    const targetT = Math.max(scroll.offset, stepT);
 
-    pulseRef.current.position.set(point.x, point.y, point.z);
+    // Smoothly animate pulse towards target
+    smoothT.current += (targetT - smoothT.current) * Math.min(delta * 1.5, 0.08);
+    const progress = Math.max(0, Math.min(smoothT.current, 0.999));
 
-    // Pulsing glow scale
-    if (pulseGlowRef.current) {
-      const scale = 1 + Math.sin(t * 4) * 0.3;
-      pulseGlowRef.current.scale.setScalar(scale);
-      pulseGlowRef.current.position.copy(pulseRef.current.position);
-    }
+    // Position pulse on curve
+    const pulsePos = HIGHWAY_CURVE.getPointAt(progress);
+    pulseRef.current.position.copy(pulsePos);
+    pulseGlowRef.current.position.copy(pulsePos);
+    if (pulseLightRef.current) pulseLightRef.current.position.copy(pulsePos);
+
+    // Pulsing glow
+    const s = 1 + Math.sin(t * 5) * 0.3;
+    pulseGlowRef.current.scale.setScalar(s);
+
+    // Share progress via context ref (no scene.traverse needed)
+    progressRef.current = progress;
   });
 
   return (
     <group>
-      {/* Main Energy Stream line */}
-      <Line
-        points={linePoints}
-        color="#00FFCC"
-        lineWidth={2}
-        transparent
-        opacity={0.5}
-      />
+      <mesh geometry={tubeGeometry}>
+        <meshBasicMaterial color="#00ffcc" transparent opacity={0.5} toneMapped={false} />
+      </mesh>
+      <mesh geometry={tubeGlowGeometry}>
+        <meshBasicMaterial color="#00e5ff" transparent opacity={0.12} toneMapped={false} />
+      </mesh>
 
-      {/* Secondary inner glow line */}
-      <Line
-        points={linePoints}
-        color="#00E5FF"
-        lineWidth={1}
-        transparent
-        opacity={0.25}
-      />
+      {STATION_POSITIONS.map((pos, i) => (
+        <group key={i} position={[pos.x, pos.y, pos.z]}>
+          <mesh rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.6, 0.06, 8, 24]} />
+            <meshStandardMaterial emissive="#00ffcc" emissiveIntensity={2} color="#003322" />
+          </mesh>
+          <mesh>
+            <sphereGeometry args={[0.18, 10, 10]} />
+            <meshBasicMaterial color="#00ffcc" toneMapped={false} />
+          </mesh>
+          <pointLight color="#00ffcc" intensity={2} distance={8} />
+        </group>
+      ))}
 
-      {/* Station nodes at each step position */}
-      {[0, 1, 2, 3, 4, 5].map((i) => {
-        const isCompleted = i + 1 < currentStep;
-        const isActive = i + 1 === currentStep;
-        const isPending = i + 1 > currentStep;
-
-        return (
-          <group key={i} position={[i * SPACING, 0, 0]}>
-            {/* Station ring */}
-            <mesh rotation={[Math.PI / 2, 0, 0]}>
-              <ringGeometry args={[0.6, 0.75, 32]} />
-              <meshStandardMaterial
-                emissive={isPending ? '#334455' : '#00ffcc'}
-                emissiveIntensity={isActive ? 4 : isCompleted ? 2 : 0.2}
-                color={isPending ? '#111122' : '#003322'}
-                transparent
-                opacity={isPending ? 0.3 : 0.8}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-
-            {/* Station glow sphere */}
-            {(isActive || isCompleted) && (
-              <Sphere args={[0.2, 12, 12]}>
-                <meshBasicMaterial
-                  color="#00ffcc"
-                  toneMapped={false}
-                  transparent
-                  opacity={isActive ? 0.9 : 0.4}
-                />
-              </Sphere>
-            )}
-
-            {/* Station point light */}
-            <pointLight
-              color="#00ffcc"
-              intensity={isActive ? 3 : isCompleted ? 1 : 0}
-              distance={5}
-            />
-          </group>
-        );
-      })}
-
-      {/* The Data Pulse — the bright sphere traveling the highway */}
-      <Sphere ref={pulseRef} args={[0.35, 12, 12]}>
+      <mesh ref={pulseRef}>
+        <sphereGeometry args={[0.3, 10, 10]} />
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
-      </Sphere>
-
-      {/* Pulse outer glow */}
-      <Sphere ref={pulseGlowRef} args={[0.7, 12, 12]}>
-        <meshBasicMaterial
-          color="#00ffcc"
-          toneMapped={false}
-          transparent
-          opacity={0.3}
-        />
-      </Sphere>
-
-      {/* Pulse point light (follows pulse) */}
-      <pointLight
-        color="#00ffcc"
-        intensity={3}
-        distance={8}
-        position={[0, 0, 0]}
-        ref={(light) => {
-          if (light && pulseRef.current) {
-            // Will be updated by parent in useFrame
-          }
-        }}
-      />
+      </mesh>
+      <mesh ref={pulseGlowRef}>
+        <sphereGeometry args={[0.7, 10, 10]} />
+        <meshBasicMaterial color="#00ffcc" toneMapped={false} transparent opacity={0.2} />
+      </mesh>
+      <pointLight ref={pulseLightRef} color="#00ffcc" intensity={3} distance={10} />
     </group>
   );
 }

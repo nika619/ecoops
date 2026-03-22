@@ -14,6 +14,8 @@ import os
 import json
 import threading
 import queue
+import time
+import logging
 
 from flask import Flask, render_template, request, jsonify, Response
 from dotenv import load_dotenv
@@ -28,33 +30,53 @@ from backend.utils.shared_utils import (
 
 load_dotenv()
 
+logger = logging.getLogger("ecoops.web")
+
 # Resolve paths relative to repo root (one level up from backend/)
 _ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 
 app = Flask(__name__,
             template_folder=os.path.join(_ROOT, "templates", "web"),
             static_folder=os.path.join(_ROOT, "static"))
-app.secret_key = os.urandom(24)
+app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24).hex())
+
+# Allowed frontend origins for CORS
+_ALLOWED_ORIGINS = os.getenv(
+    "CORS_ORIGINS", "http://localhost:5173,http://localhost:5001"
+).split(",")
 
 
 @app.after_request
 def add_cors_headers(response):
-    """Allow cross-origin requests from the 3D frontend."""
-    response.headers["Access-Control-Allow-Origin"] = "*"
+    """Allow cross-origin requests from known frontend origins."""
+    origin = request.headers.get("Origin", "")
+    if any(origin.startswith(o.strip()) for o in _ALLOWED_ORIGINS):
+        response.headers["Access-Control-Allow-Origin"] = origin
+    else:
+        # Fallback for dev
+        response.headers["Access-Control-Allow-Origin"] = "http://localhost:5173"
     response.headers["Access-Control-Allow-Headers"] = "Content-Type"
     response.headers["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
     return response
 
 
-# ── Global state for SSE progress ───────────────────────────
-progress_queues = {}
+# ── Thread-safe SSE progress with cleanup ────────────────────
+_queue_lock = threading.Lock()
+progress_queues: dict[str, queue.Queue] = {}
 
 
 def get_queue(session_id: str) -> queue.Queue:
-    """Get or create a queue for SSE progress updates."""
-    if session_id not in progress_queues:
-        progress_queues[session_id] = queue.Queue()
-    return progress_queues[session_id]
+    """Get or create a queue for SSE progress updates (thread-safe)."""
+    with _queue_lock:
+        if session_id not in progress_queues:
+            progress_queues[session_id] = queue.Queue()
+        return progress_queues[session_id]
+
+
+def cleanup_queue(session_id: str) -> None:
+    """Remove a session's queue to prevent memory leaks."""
+    with _queue_lock:
+        progress_queues.pop(session_id, None)
 
 
 def emit(session_id: str, event: str, data: dict) -> None:
@@ -90,11 +112,13 @@ def analyze():
     dry_run = data.get("dry_run", True)
     session_id = data.get("session_id", "default")
 
-    # Parse project_id (fallback to .env value)
+    # Validate project ID
     if not project_id:
         project_id = os.getenv("GITLAB_PROJECT_ID", "")
     try:
-        project_id = int(project_id)
+        project_id_int = int(project_id)
+        if project_id_int <= 0:
+            raise ValueError("Must be positive")
     except (ValueError, TypeError):
         return jsonify({"error": f"Invalid Project ID: '{project_id}'"}), 400
 
@@ -109,7 +133,7 @@ def analyze():
     # Run analysis in background thread
     thread = threading.Thread(
         target=run_analysis,
-        args=(session_id, project_id, gitlab_token, gemini_key, dry_run),
+        args=(session_id, project_id_int, gitlab_token, gemini_key, dry_run),
         daemon=True
     )
     thread.start()
@@ -122,16 +146,20 @@ def progress(session_id):
     """SSE endpoint for live progress updates."""
     def generate():
         q = get_queue(session_id)
-        while True:
-            try:
-                msg = q.get(timeout=300)
-                event = msg["event"]
-                data = json.dumps(msg["data"])
-                yield f"event: {event}\ndata: {data}\n\n"
-                if event in ("complete", "error"):
-                    break
-            except queue.Empty:
-                yield "event: ping\ndata: {}\n\n"
+        try:
+            while True:
+                try:
+                    msg = q.get(timeout=300)
+                    event = msg["event"]
+                    data = json.dumps(msg["data"])
+                    yield f"event: {event}\ndata: {data}\n\n"
+                    if event in ("complete", "error"):
+                        break
+                except queue.Empty:
+                    yield "event: ping\ndata: {}\n\n"
+        finally:
+            # Clean up the queue to prevent memory leaks
+            cleanup_queue(session_id)
 
     return Response(
         generate(), mimetype="text/event-stream",
@@ -143,13 +171,17 @@ def progress(session_id):
 
 # ── Analysis Pipeline ───────────────────────────────────────
 
-# format_commits_data, format_repo_tree, and count_optimized_jobs
-# are imported from shared_utils.py
-
-
 def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                  gemini_key: str, dry_run: bool) -> None:
-    """Run the full ECOOPS analysis pipeline with progress events."""
+    """Run the full ECOOPS analysis pipeline with progress events.
+
+    Always emits exactly 5 steps for frontend alignment:
+      Step 1: Fetching Pipeline Data
+      Step 2: Analyzing Waste Patterns
+      Step 3: Generating Optimized YAML
+      Step 4: Validating Configuration
+      Step 5: Creating MR / Finalizing Results
+    """
     base_url = os.getenv("GITLAB_BASE_URL", "https://gitlab.com")
     gitlab = GitLabClient(gitlab_token, project_id, base_url)
     gemini = GeminiClient(gemini_key)
@@ -268,7 +300,8 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
             "detail": {"valid": lint_valid}
         })
 
-        # ── Step 5 & 6: Create MR (if not dry run) ────────
+        # ── Step 5: Create MR / Finalize ───────────────────
+        # Always emit step 5 so the pulse reaches Station 5
         mr_url = None
         if not dry_run:
             emit(session_id, "step", {
@@ -329,6 +362,19 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                 "step": 5, "title": "Creating Merge Request",
                 "icon": "📤", "status": "done",
                 "detail": {"mr_url": mr_url}
+            })
+        else:
+            # Dry run — still emit step 5 so pulse reaches the end
+            emit(session_id, "step", {
+                "step": 5, "title": "Finalizing Results",
+                "description": "Dry run — compiling impact report...",
+                "icon": "🌱", "status": "running"
+            })
+            time.sleep(0.5)  # Brief pause for visual effect
+            emit(session_id, "step", {
+                "step": 5, "title": "Finalizing Results",
+                "icon": "🌱", "status": "done",
+                "detail": {"dry_run": True}
             })
 
         # ── Complete ───────────────────────────────────────
