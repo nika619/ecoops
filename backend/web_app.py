@@ -17,7 +17,7 @@ import queue
 import time
 import logging
 
-from flask import Flask, render_template, request, jsonify, Response
+from flask import Flask, render_template, request, jsonify, Response, send_from_directory
 from dotenv import load_dotenv
 
 from backend.utils.gitlab_client import GitLabClient
@@ -87,9 +87,25 @@ def emit(session_id: str, event: str, data: dict) -> None:
 
 # ── Routes ──────────────────────────────────────────────────
 
-@app.route("/")
-def index():
-    """Serve the main dashboard."""
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve_vite(path):
+    """Serve the Vite React frontend or fallback to the old dashboard."""
+    dist_dir = os.path.join(_ROOT, "frontend", "dist")
+    
+    # Don't intercept actual API routes
+    if path and path.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
+
+    # Serve static files from the Vite build
+    if path != "" and os.path.exists(os.path.join(dist_dir, path)):
+        return send_from_directory(dist_dir, path)
+        
+    # Serve the Vite index.html for root and client-side routes
+    if os.path.exists(os.path.join(dist_dir, "index.html")):
+        return send_from_directory(dist_dir, "index.html")
+
+    # Fallback for dev mode
     return render_template("dashboard.html")
 
 
