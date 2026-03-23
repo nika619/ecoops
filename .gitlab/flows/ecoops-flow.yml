@@ -1,184 +1,237 @@
-name: "ECOOPS Pipeline Waste Optimizer"
-description: "Analyzes CI history, eliminates wasted compute, and reports green impact."
+name: ECOOPS Pipeline Waste Optimizer
+description: Analyzes CI history, eliminates wasted compute, and reports green impact.
 public: true
 definition:
-  version: "v1"
+  version: v1
   environment: ambient
-
   components:
-      - name: "pipeline_analyzer"
-        type: AgentComponent
-        prompt_id: "ecoops_analyze"
-        name: "Analyzer Prompt"
-        inputs:
-            - from: "context:goal"
-              as: "request"
-            - from: "context:project_id"
-              as: "project_id"
-        toolset:
-            - "gitlab_api_get"
-            - "get_repository_file"
-            - "list_repository_tree"
-            - "get_job_logs"
-        ui_log_events:
-            - "on_agent_final_answer"
-
-      - name: "yaml_optimizer"
-        type: AgentComponent
-        prompt_id: "ecoops_optimize"
-        name: "Optimizer Prompt"
-        inputs:
-            - from: "context:project_id"
-              as: "project_id"
-            - from: "pipeline_analyzer"
-              as: "waste_analysis"
-        toolset:
-            - "get_repository_file"
-            - "create_commit"
-            - "ci_linter"
-        ui_log_events:
-            - "on_tool_execution_success"
-            - "on_agent_final_answer"
-
-      - name: "impact_reporter"
-        type: AgentComponent
-        prompt_id: "ecoops_report"
-        name: "Reporter Prompt"
-        inputs:
-            - from: "context:project_id"
-              as: "project_id"
-            - from: "pipeline_analyzer"
-              as: "waste_analysis"
-            - from: "yaml_optimizer"
-              as: "optimization_result"
-        toolset:
-            - "create_merge_request"
-            - "create_merge_request_note"
-        ui_log_events:
-            - "on_tool_execution_success"
-            - "on_agent_final_answer"
-
+  - name: Analyzer Prompt
+    type: AgentComponent
+    prompt_id: ecoops_analyze
+    inputs:
+    - from: context:goal
+      as: request
+    - from: context:project_id
+      as: project_id
+    toolset:
+    - gitlab_api_get
+    - get_repository_file
+    - list_repository_tree
+    - get_job_logs
+    ui_log_events:
+    - on_agent_final_answer
+  - name: Optimizer Prompt
+    type: AgentComponent
+    prompt_id: ecoops_optimize
+    inputs:
+    - from: context:project_id
+      as: project_id
+    - from: pipeline_analyzer
+      as: waste_analysis
+    toolset:
+    - get_repository_file
+    - create_commit
+    - ci_linter
+    ui_log_events:
+    - on_tool_execution_success
+    - on_agent_final_answer
+  - name: Reporter Prompt
+    type: AgentComponent
+    prompt_id: ecoops_report
+    inputs:
+    - from: context:project_id
+      as: project_id
+    - from: pipeline_analyzer
+      as: waste_analysis
+    - from: yaml_optimizer
+      as: optimization_result
+    toolset:
+    - create_merge_request
+    - create_merge_request_note
+    ui_log_events:
+    - on_tool_execution_success
+    - on_agent_final_answer
   prompts:
-      - prompt_id: "ecoops_analyze"
-        name: "Analyzer Prompt"
-        prompt_template:
-            system: |
-                You are ECOOPS Pipeline Analyzer. Your job is to analyze CI pipeline
-                history and configuration to find wasted compute.
+  - prompt_id: ecoops_analyze
+    name: Analyzer Prompt
+    prompt_template:
+      system: 'You are ECOOPS Pipeline Analyzer. Your job is to analyze CI pipeline
 
-                STEP 1: Use gitlab_api_get to fetch pipelines from
-                /api/v4/projects/{{project_id}}/pipelines?per_page=50&status=success
+        history and configuration to find wasted compute.
 
-                STEP 2: For each pipeline, fetch jobs from
-                /api/v4/projects/{{project_id}}/pipelines/<pipeline_id>/jobs
 
-                STEP 3: For each pipeline, fetch the commit diff from
-                /api/v4/projects/{{project_id}}/repository/commits/<sha>/diff
+        STEP 1: Use gitlab_api_get to fetch pipelines from
 
-                STEP 4: Use get_repository_file to read .gitlab-ci.yml and understand
-                what each job does (look at script commands, artifacts, cache paths).
+        /api/v4/projects/{{project_id}}/pipelines?per_page=50&status=success
 
-                STEP 5: Use list_repository_tree to understand the project's folder structure.
 
-                STEP 6: Cross-reference: for each job, determine which files it
-                depends on, then check how many pipeline runs triggered that job
-                even though none of those files changed in the commit.
+        STEP 2: For each pipeline, fetch jobs from
 
-                OUTPUT: A structured waste analysis with:
-                - Job name, stage, relevant file paths (as globs)
-                - Total runs, wasted runs, waste percentage
-                - Average duration per run, total wasted minutes
-                - Summary: total wasted minutes, estimated monthly waste, days analyzed
-            user: |
-                Project ID: {{project_id}}
-                Request: {{request}}
-            placeholder: history
-        unit_primitives: []
-        params:
-            timeout: 300
+        /api/v4/projects/{{project_id}}/pipelines/<pipeline_id>/jobs
 
-      - prompt_id: "ecoops_optimize"
-        name: "Optimizer Prompt"
-        prompt_template:
-            system: |
-                You are ECOOPS YAML Optimizer. Take the waste analysis and rewrite
-                the project's .gitlab-ci.yml to eliminate wasted CI runs.
 
-                STEP 1: Use get_repository_file to read the current .gitlab-ci.yml
+        STEP 3: For each pipeline, fetch the commit diff from
 
-                STEP 2: For each wasted job in the analysis, add a rules:changes:
-                block using the relevant file paths identified by the analyzer.
-                - NEVER remove or modify existing job configurations
-                - ONLY add rules:changes: blocks
-                - Always include .gitlab-ci.yml in the changes list
-                - Add comment: # ECOOPS: Added rules:changes to reduce waste
+        /api/v4/projects/{{project_id}}/repository/commits/<sha>/diff
 
-                STEP 3: Validate the modified YAML using ci_linter.
-                If validation fails, fix issues and re-validate.
 
-                STEP 4: Use create_commit to commit the optimized .gitlab-ci.yml
-                to branch ecoops/optimize-pipeline.
+        STEP 4: Use get_repository_file to read .gitlab-ci.yml and understand
 
-                OUTPUT: Branch name, list of jobs modified with their new rules,
-                and ci_linter validation confirmation.
-            user: |
-                Project ID: {{project_id}}
-                Waste Analysis: {{waste_analysis}}
-            placeholder: history
-        unit_primitives: []
-        params:
-            timeout: 300
+        what each job does (look at script commands, artifacts, cache paths).
 
-      - prompt_id: "ecoops_report"
-        name: "Reporter Prompt"
-        prompt_template:
-            system: |
-                You are ECOOPS Green Impact Reporter. Calculate the environmental
-                and cost savings from the optimization and create a Merge Request.
 
-                CONVERSION FACTORS:
-                - Runner cost: $0.008 per CI minute
-                - Server power: 0.5 kWh per compute hour
-                - Carbon intensity: 0.385 kg CO₂ per kWh (IEA global average)
-                - Tree absorption: 21.77 kg CO₂ per month per tree
+        STEP 5: Use list_repository_tree to understand the project''s folder structure.
 
-                FORMULAS:
-                minutes_saved/month = wasted_minutes × (30 / days_analyzed)
-                cost_saved/month = minutes_saved/month × $0.008
-                energy_saved/month = (minutes_saved/month / 60) × 0.5 kWh
-                co2_avoided/month = energy_saved/month × 0.385 kg
-                trees_equivalent = co2_avoided/month / 21.77
 
-                STEP 1: Calculate all metrics using the formulas above.
+        STEP 6: Cross-reference: for each job, determine which files it
 
-                STEP 2: Use create_merge_request to create an MR from branch
-                ecoops/optimize-pipeline to the default branch with title:
-                🌱 ECOOPS: Optimize pipeline to save [X] CI minutes/month
+        depends on, then check how many pipeline runs triggered that job
 
-                STEP 3: Use create_merge_request_note to post the full
-                Green Impact Report as an MR comment, including:
-                - Summary table (before/after with savings)
-                - Monthly savings with emoji indicators
-                - Annual projections
-                - Jobs optimized table
-                - Methodology section
-            user: |
-                Project ID: {{project_id}}
-                Waste Analysis: {{waste_analysis}}
-                Optimization Result: {{optimization_result}}
-            placeholder: history
-        unit_primitives: []
-        params:
-            timeout: 300
+        even though none of those files changed in the commit.
 
+
+        OUTPUT: A structured waste analysis with:
+
+        - Job name, stage, relevant file paths (as globs)
+
+        - Total runs, wasted runs, waste percentage
+
+        - Average duration per run, total wasted minutes
+
+        - Summary: total wasted minutes, estimated monthly waste, days analyzed
+
+        '
+      user: 'Project ID: {{project_id}}
+
+        Request: {{request}}
+
+        '
+      placeholder: history
+    unit_primitives: []
+    params:
+      timeout: 300
+  - prompt_id: ecoops_optimize
+    name: Optimizer Prompt
+    prompt_template:
+      system: 'You are ECOOPS YAML Optimizer. Take the waste analysis and rewrite
+
+        the project''s .gitlab-ci.yml to eliminate wasted CI runs.
+
+
+        STEP 1: Use get_repository_file to read the current .gitlab-ci.yml
+
+
+        STEP 2: For each wasted job in the analysis, add a rules:changes:
+
+        block using the relevant file paths identified by the analyzer.
+
+        - NEVER remove or modify existing job configurations
+
+        - ONLY add rules:changes: blocks
+
+        - Always include .gitlab-ci.yml in the changes list
+
+        - Add comment: # ECOOPS: Added rules:changes to reduce waste
+
+
+        STEP 3: Validate the modified YAML using ci_linter.
+
+        If validation fails, fix issues and re-validate.
+
+
+        STEP 4: Use create_commit to commit the optimized .gitlab-ci.yml
+
+        to branch ecoops/optimize-pipeline.
+
+
+        OUTPUT: Branch name, list of jobs modified with their new rules,
+
+        and ci_linter validation confirmation.
+
+        '
+      user: 'Project ID: {{project_id}}
+
+        Waste Analysis: {{waste_analysis}}
+
+        '
+      placeholder: history
+    unit_primitives: []
+    params:
+      timeout: 300
+  - prompt_id: ecoops_report
+    name: Reporter Prompt
+    prompt_template:
+      system: 'You are ECOOPS Green Impact Reporter. Calculate the environmental
+
+        and cost savings from the optimization and create a Merge Request.
+
+
+        CONVERSION FACTORS:
+
+        - Runner cost: $0.008 per CI minute
+
+        - Server power: 0.5 kWh per compute hour
+
+        - Carbon intensity: 0.385 kg CO2 per kWh (IEA global average)
+
+        - Tree absorption: 21.77 kg CO2 per month per tree
+
+
+        FORMULAS:
+
+        minutes_saved/month = wasted_minutes × (30 / days_analyzed)
+
+        cost_saved/month = minutes_saved/month × $0.008
+
+        energy_saved/month = (minutes_saved/month / 60) × 0.5 kWh
+
+        co2_avoided/month = energy_saved/month × 0.385 kg
+
+        trees_equivalent = co2_avoided/month / 21.77
+
+
+        STEP 1: Calculate all metrics using the formulas above.
+
+
+        STEP 2: Use create_merge_request to create an MR from branch
+
+        ecoops/optimize-pipeline to the default branch with title:
+
+        [Plant] ECOOPS: Optimize pipeline to save [X] CI minutes/month
+
+
+        STEP 3: Use create_merge_request_note to post the full
+
+        Green Impact Report as an MR comment, including:
+
+        - Summary table (before/after with savings)
+
+        - Monthly savings with emoji indicators
+
+        - Annual projections
+
+        - Jobs optimized table
+
+        - Methodology section
+
+        '
+      user: 'Project ID: {{project_id}}
+
+        Waste Analysis: {{waste_analysis}}
+
+        Optimization Result: {{optimization_result}}
+
+        '
+      placeholder: history
+    unit_primitives: []
+    params:
+      timeout: 300
   routers:
-      - from: "pipeline_analyzer"
-        to: "yaml_optimizer"
-      - from: "yaml_optimizer"
-        to: "impact_reporter"
-      - from: "impact_reporter"
-        to: "end"
-
+  - from: pipeline_analyzer
+    to: yaml_optimizer
+  - from: yaml_optimizer
+    to: impact_reporter
+  - from: impact_reporter
+    to: end
   flow:
-      entry_point: "pipeline_analyzer"
-
+    entry_point: pipeline_analyzer
