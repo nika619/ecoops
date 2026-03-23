@@ -29,7 +29,7 @@
    - ✅ `get_job_logs`
    - ✅ `create_issue_note`
 
-4. Under **System Prompt**, paste the full prompt from [`agents/pipeline-analyzer.md`](../agents/pipeline-analyzer.md) (the content inside the code block)
+4. Under **System Prompt**, paste the full prompt from [`.gitlab/agents/pipeline-analyzer.md`](../.gitlab/agents/pipeline-analyzer.md) (the content inside the code block)
 
 5. Click **Create Agent**
 
@@ -51,7 +51,7 @@
    - ✅ `create_commit`
    - ✅ `ci_linter`
 
-4. Under **System Prompt**, paste the full prompt from [`agents/yaml-optimizer.md`](../agents/yaml-optimizer.md)
+4. Under **System Prompt**, paste the full prompt from [`.gitlab/agents/yaml-optimizer.md`](../.gitlab/agents/yaml-optimizer.md)
 
 5. Click **Create Agent**
 
@@ -73,7 +73,7 @@
    - ✅ `create_merge_request_note`
    - ✅ `create_issue_note`
 
-4. Under **System Prompt**, paste the full prompt from [`agents/green-impact-reporter.md`](../agents/green-impact-reporter.md)
+4. Under **System Prompt**, paste the full prompt from [`.gitlab/agents/green-impact-reporter.md`](../.gitlab/agents/green-impact-reporter.md)
 
 5. Click **Create Agent**
 
@@ -90,7 +90,7 @@
 | Description | `Analyzes CI pipeline waste and auto-optimizes .gitlab-ci.yml with a Green Impact Report` |
 | Visibility | `Public` |
 
-3. Under **Flow Configuration**, paste the YAML from [`flows/ecoops-flow.yml`](../flows/ecoops-flow.yml)
+3. Under **Flow Configuration**, paste the YAML from [`.gitlab/flows/ecoops-flow.yml`](../.gitlab/flows/ecoops-flow.yml)
 
 4. Click **Create Flow**
 

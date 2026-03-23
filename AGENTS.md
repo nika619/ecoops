@@ -8,8 +8,8 @@ ECOOPS (Emission Cost Optimizer — Operations Pipeline System) is a CI/CD susta
 
 ## Repository Layout
 
-- `agents/` — System prompts for each custom agent
-- `flows/` — Flow configuration YAML
+- `.gitlab/agents/` — System prompts for each custom agent
+- `.gitlab/flows/` — Flow configuration YAML
 - `demo/` — Sample project and intentionally wasteful CI for demo purposes
 - `docs/` — Methodology documentation and setup guides
 - `templates/` — Report templates
