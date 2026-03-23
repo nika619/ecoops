@@ -89,6 +89,7 @@ definition:
                 Project ID: {{project_id}}
                 Request: {{request}}
             placeholder: history
+        unit_primitives: []
         params:
             timeout: 300
 
@@ -119,6 +120,7 @@ definition:
                 Project ID: {{project_id}}
                 Waste Analysis: {{waste_analysis}}
             placeholder: history
+        unit_primitives: []
         params:
             timeout: 300
 
@@ -159,6 +161,7 @@ definition:
                 Waste Analysis: {{waste_analysis}}
                 Optimization Result: {{optimization_result}}
             placeholder: history
+        unit_primitives: []
         params:
             timeout: 300
 
