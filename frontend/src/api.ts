@@ -3,7 +3,7 @@
  * Uses SSE (Server-Sent Events) for live analysis progress
  */
 
-const API_BASE = 'http://localhost:5001';
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:5001' : '');
 
 export interface AnalysisMetrics {
   total_wasted_minutes: number;
