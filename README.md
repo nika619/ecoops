@@ -289,12 +289,13 @@ ecoops/
 │   ├── test_run_logger.py
 │   └── test_api.py
 │
-├── agents/                         # Agent system prompts
-│   ├── pipeline-analyzer.md
-│   ├── yaml-optimizer.md
-│   └── green-impact-reporter.md
-├── flows/
-│   └── ecoops-flow.yml             # Flow configuration
+├── .gitlab/                        # GitLab Duo AI configurations
+│   ├── agents/                     # Custom agent system prompts
+│   │   ├── pipeline-analyzer.md
+│   │   ├── yaml-optimizer.md
+│   │   └── green-impact-reporter.md
+│   └── flows/                      # Agent flow definitions
+│       └── ecoops-flow.yml
 ├── demo/
 │   ├── wasteful-ci.yml             # Intentionally wasteful CI (for demo)
 │   └── sample-app/                 # Sample Python app
