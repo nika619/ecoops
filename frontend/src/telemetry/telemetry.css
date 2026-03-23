@@ -1,0 +1,248 @@
+/* ════════════════════════════════════════════════════════
+   ECOOPS — Telemetry Visualization Engine
+   "Aether Control" Design System
+   ════════════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+:root {
+  --te-bg: #080f1e;
+  --te-surface: #0c1322;
+  --te-surface-low: #151b2b;
+  --te-surface-mid: #191f2f;
+  --te-surface-high: #232a3a;
+  --te-surface-highest: #2e3545;
+
+  --te-cyan: #06b6d4;
+  --te-cyan-light: #4cd7f6;
+  --te-cyan-dim: rgba(6, 182, 212, 0.15);
+
+  --te-purple: #a855f7;
+  --te-purple-light: #ddb7ff;
+  --te-purple-dim: rgba(168, 85, 247, 0.15);
+
+  --te-green: #10b981;
+  --te-green-light: #4edea3;
+  --te-amber: #f59e0b;
+  --te-red: #ef4444;
+
+  --te-text: #dce2f8;
+  --te-text-dim: #869397;
+  --te-text-muted: rgba(220, 226, 248, 0.4);
+
+  --te-glass-bg: rgba(255, 255, 255, 0.03);
+  --te-glass-border: rgba(255, 255, 255, 0.1);
+  --te-glass-blur: blur(12px);
+
+  --te-font-display: 'Space Grotesk', sans-serif;
+  --te-font-body: 'Inter', sans-serif;
+  --te-font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+}
+
+/* ── Deep Space Background ─────────────────────────────── */
+.telemetry-root {
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--te-bg);
+  background-image: radial-gradient(circle at 50% 0%, #111a30 0%, transparent 70%);
+  font-family: var(--te-font-body);
+  color: var(--te-text);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ── Glassmorphism Panel ───────────────────────────────── */
+.te-glass {
+  background: var(--te-glass-bg);
+  backdrop-filter: var(--te-glass-blur);
+  -webkit-backdrop-filter: var(--te-glass-blur);
+  border: 1px solid var(--te-glass-border);
+  border-radius: 8px;
+}
+
+/* ── Glow States ───────────────────────────────────────── */
+.te-glow-cyan {
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.4), inset 0 0 10px rgba(6, 182, 212, 0.15);
+  border-color: rgba(6, 182, 212, 0.5) !important;
+}
+
+.te-glow-purple {
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.5), inset 0 0 15px rgba(168, 85, 247, 0.2);
+  border-color: rgba(168, 85, 247, 0.6) !important;
+}
+
+.te-glow-green {
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+  border-color: rgba(16, 185, 129, 0.4) !important;
+}
+
+/* ── Particle Flow Animations ──────────────────────────── */
+@keyframes te-particle-flow {
+  to { stroke-dashoffset: -40; }
+}
+
+@keyframes te-particle-flow-reverse {
+  to { stroke-dashoffset: 40; }
+}
+
+.te-data-stream {
+  stroke-dasharray: 6 14;
+  animation: te-particle-flow 0.8s linear infinite;
+}
+
+.te-optimization-stream {
+  stroke-dasharray: 4 20;
+  animation: te-particle-flow-reverse 0.4s linear infinite;
+}
+
+/* ── AI Core Pulsing ───────────────────────────────────── */
+@keyframes te-pulse-core {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+
+@keyframes te-pulse-core-fast {
+  0%, 100% { transform: scale(1); opacity: 0.9; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+
+@keyframes te-pulse-ring {
+  0%, 100% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.15); opacity: 0.6; }
+}
+
+@keyframes te-ping {
+  0% { transform: scale(1); opacity: 0.75; }
+  75%, 100% { transform: scale(2); opacity: 0; }
+}
+
+.te-ai-pulse {
+  animation: te-pulse-core 2s ease-in-out infinite;
+}
+
+.te-ai-pulse-fast {
+  animation: te-pulse-core-fast 0.5s ease-in-out infinite;
+}
+
+.te-ring-pulse {
+  animation: te-pulse-ring 2s ease-in-out infinite;
+}
+
+.te-ping {
+  animation: te-ping 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+/* ── Entrance Animations ───────────────────────────────── */
+@keyframes te-fadeSlideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes te-fadeSlideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes te-fadeSlideLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes te-fadeSlideRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes te-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes te-loaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes te-dockSlideUp {
+  from { opacity: 0; transform: translate(-50%, 40px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@keyframes te-pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+@keyframes te-sparkline-draw {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+/* ── Sparkline Charts ──────────────────────────────────── */
+.te-sparkline {
+  stroke-dasharray: 200;
+  animation: te-sparkline-draw 2s ease-out forwards;
+}
+
+/* ── Status Dot ────────────────────────────────────────── */
+@keyframes te-dot-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.3; }
+}
+
+.te-dot-blink {
+  animation: te-dot-blink 1.5s ease-in-out infinite;
+}
+
+/* ── Scrollbar ─────────────────────────────────────────── */
+.telemetry-root ::-webkit-scrollbar {
+  width: 4px;
+}
+.telemetry-root ::-webkit-scrollbar-track {
+  background: transparent;
+}
+.telemetry-root ::-webkit-scrollbar-thumb {
+  background: rgba(6, 182, 212, 0.2);
+  border-radius: 4px;
+}
+
+/* ── Input Focus ───────────────────────────────────────── */
+.te-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: #070e1d;
+  border: 1px solid rgba(61, 73, 76, 0.2);
+  border-radius: 6px;
+  color: var(--te-text);
+  font-family: var(--te-font-mono);
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-sizing: border-box;
+}
+
+.te-input:focus {
+  border-color: var(--te-cyan);
+  box-shadow: 0 0 0 2px rgba(6, 182, 212, 0.15), 0 0 12px rgba(6, 182, 212, 0.1);
+}
+
+/* ── Toggle ────────────────────────────────────────────── */
+.te-toggle-track {
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.te-toggle-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: left 0.35s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
