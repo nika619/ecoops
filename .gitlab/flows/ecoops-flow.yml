@@ -5,7 +5,7 @@ definition:
   version: v1
   environment: ambient
   components:
-  - name: Analyzer Prompt
+  - name: pipeline_analyzer
     type: AgentComponent
     prompt_id: ecoops_analyze
     inputs:
@@ -20,7 +20,7 @@ definition:
     - get_job_logs
     ui_log_events:
     - on_agent_final_answer
-  - name: Optimizer Prompt
+  - name: yaml_optimizer
     type: AgentComponent
     prompt_id: ecoops_optimize
     inputs:
@@ -35,7 +35,7 @@ definition:
     ui_log_events:
     - on_tool_execution_success
     - on_agent_final_answer
-  - name: Reporter Prompt
+  - name: impact_reporter
     type: AgentComponent
     prompt_id: ecoops_report
     inputs:
@@ -107,11 +107,7 @@ definition:
 
         '
       placeholder: history
-    unit_primitives:
-    - tool_name: gitlab_api_get
-    - tool_name: get_repository_file
-    - tool_name: list_repository_tree
-    - tool_name: get_job_logs
+    unit_primitives: []
     params:
       timeout: 300
   - prompt_id: ecoops_optimize
@@ -159,10 +155,7 @@ definition:
 
         '
       placeholder: history
-    unit_primitives:
-    - tool_name: get_repository_file
-    - tool_name: create_commit
-    - tool_name: ci_linter
+    unit_primitives: []
     params:
       timeout: 300
   - prompt_id: ecoops_report
@@ -230,9 +223,7 @@ definition:
 
         '
       placeholder: history
-    unit_primitives:
-    - tool_name: create_merge_request
-    - tool_name: create_merge_request_note
+    unit_primitives: []
     params:
       timeout: 300
   routers:
