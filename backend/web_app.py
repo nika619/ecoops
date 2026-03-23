@@ -26,7 +26,7 @@ from backend.services.reporter import (
     parse_waste_metrics, calculate_savings, generate_impact_report)
 from backend.utils.run_logger import save_run_log
 from backend.utils.shared_utils import (
-    format_commits_data, format_repo_tree, count_optimized_jobs)
+    format_repo_tree, count_optimized_jobs)
 from backend.config import (
     GEMINI_API_KEY, GITLAB_TOKEN, GITLAB_PROJECT_ID, GITLAB_BASE_URL)
 
@@ -94,7 +94,7 @@ def emit(session_id: str, event: str, data: dict) -> None:
 def serve_vite(path):
     """Serve the Vite React frontend or fallback to the old dashboard."""
     dist_dir = os.path.join(_ROOT, "frontend", "dist")
-    
+
     # Don't intercept actual API routes
     if path and path.startswith("api/"):
         return jsonify({"error": "Not found"}), 404
@@ -102,7 +102,7 @@ def serve_vite(path):
     # Serve static files from the Vite build
     if path != "" and os.path.exists(os.path.join(dist_dir, path)):
         return send_from_directory(dist_dir, path)
-        
+
     # Serve the Vite index.html for root and client-side routes
     if os.path.exists(os.path.join(dist_dir, "index.html")):
         return send_from_directory(dist_dir, "index.html")
