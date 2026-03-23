@@ -219,7 +219,7 @@ export default function GlobalMatrixApp() {
   const metrics = analysisResult?.savings?.monthly;
 
   // Derive button state: idle / deploying / complete
-  const buttonLabel = isAnalyzing ? 'DEPLOYING...' : analysisResult ? '✓ DEPLOYED — RE-RUN?' : 'DEPLOY TO EDGE 🚀';
+  const buttonLabel = isAnalyzing ? 'DEPLOYING...' : analysisResult ? '✓ DEPLOYED — RE-RUN?' : 'LAUNCH 🚀';
   const buttonDisabled = !projectId || !backendReady || isAnalyzing;
 
   return (
