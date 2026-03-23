@@ -14,10 +14,10 @@ definition:
     - from: context:project_id
       as: project_id
     toolset:
-    - tool_name: gitlab_api_get
-    - tool_name: get_repository_file
-    - tool_name: list_repository_tree
-    - tool_name: get_job_logs
+    - gitlab_api_get
+    - get_repository_file
+    - list_repository_tree
+    - get_job_logs
     ui_log_events:
     - on_agent_final_answer
   - name: Optimizer Prompt
@@ -29,9 +29,9 @@ definition:
     - from: pipeline_analyzer
       as: waste_analysis
     toolset:
-    - tool_name: get_repository_file
-    - tool_name: create_commit
-    - tool_name: ci_linter
+    - get_repository_file
+    - create_commit
+    - ci_linter
     ui_log_events:
     - on_tool_execution_success
     - on_agent_final_answer
@@ -46,8 +46,8 @@ definition:
     - from: yaml_optimizer
       as: optimization_result
     toolset:
-    - tool_name: create_merge_request
-    - tool_name: create_merge_request_note
+    - create_merge_request
+    - create_merge_request_note
     ui_log_events:
     - on_tool_execution_success
     - on_agent_final_answer
@@ -107,7 +107,11 @@ definition:
 
         '
       placeholder: history
-    unit_primitives: []
+    unit_primitives:
+    - tool_name: gitlab_api_get
+    - tool_name: get_repository_file
+    - tool_name: list_repository_tree
+    - tool_name: get_job_logs
     params:
       timeout: 300
   - prompt_id: ecoops_optimize
@@ -155,7 +159,10 @@ definition:
 
         '
       placeholder: history
-    unit_primitives: []
+    unit_primitives:
+    - tool_name: get_repository_file
+    - tool_name: create_commit
+    - tool_name: ci_linter
     params:
       timeout: 300
   - prompt_id: ecoops_report
@@ -223,7 +230,9 @@ definition:
 
         '
       placeholder: history
-    unit_primitives: []
+    unit_primitives:
+    - tool_name: create_merge_request
+    - tool_name: create_merge_request_note
     params:
       timeout: 300
   routers:
