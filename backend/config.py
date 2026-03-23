@@ -9,7 +9,7 @@ os.getenv() calls across modules.
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 # ── API Credentials ─────────────────────────────────────────
 GITLAB_TOKEN: str = os.getenv("GITLAB_TOKEN", "")
