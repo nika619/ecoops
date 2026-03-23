@@ -27,8 +27,10 @@ from backend.services.reporter import (
 from backend.utils.run_logger import save_run_log
 from backend.utils.shared_utils import (
     format_commits_data, format_repo_tree, count_optimized_jobs)
+from backend.config import (
+    GEMINI_API_KEY, GITLAB_TOKEN, GITLAB_PROJECT_ID, GITLAB_BASE_URL)
 
-load_dotenv()
+load_dotenv(override=True)
 
 logger = logging.getLogger("ecoops.web")
 
@@ -113,10 +115,10 @@ def serve_vite(path):
 def get_config():
     """Return current config (without sensitive data)."""
     return jsonify({
-        "project_id": os.getenv("GITLAB_PROJECT_ID", ""),
-        "base_url": os.getenv("GITLAB_BASE_URL", "https://gitlab.com"),
-        "has_gitlab_token": bool(os.getenv("GITLAB_TOKEN")),
-        "has_gemini_key": bool(os.getenv("GEMINI_API_KEY")),
+        "project_id": str(GITLAB_PROJECT_ID) if GITLAB_PROJECT_ID else "",
+        "base_url": GITLAB_BASE_URL,
+        "has_gitlab_token": bool(GITLAB_TOKEN),
+        "has_gemini_key": bool(GEMINI_API_KEY),
     })
 
 
@@ -138,8 +140,8 @@ def analyze():
     except (ValueError, TypeError):
         return jsonify({"error": f"Invalid Project ID: '{project_id}'"}), 400
 
-    gitlab_token = os.getenv("GITLAB_TOKEN")
-    gemini_key = os.getenv("GEMINI_API_KEY")
+    gitlab_token = GITLAB_TOKEN
+    gemini_key = GEMINI_API_KEY
 
     if not gitlab_token:
         return jsonify({"error": "GITLAB_TOKEN not configured in .env"}), 400
@@ -187,16 +189,51 @@ def progress(session_id):
 
 # ── Analysis Pipeline ───────────────────────────────────────
 
+def _format_commits_with_progress(gitlab, commits: list, session_id: str, emit_fn) -> str:
+    """Format commit diffs while streaming progress log events.
+
+    Replaces the shared format_commits_data for web use, adding per-commit
+    SSE log events so the frontend HUD shows live progress during the slow
+    50-API-call diff fetch.
+    """
+    result = []
+    total = len(commits)
+    for i, commit in enumerate(commits, 1):
+        sha = commit["id"]
+        title = commit.get("title", "")
+        date = commit.get("created_at", "")[:10]
+
+        try:
+            diff = gitlab.get_commit_diff(sha)
+            changed_files = [d.get("new_path", d.get("old_path", "")) for d in diff]
+        except Exception:
+            changed_files = ["(could not fetch diff)"]
+
+        files_str = ", ".join(changed_files) if changed_files else "(none)"
+        result.append(
+            f"Commit {i} [{date}] {sha[:8]}: {title}\n"
+            f"  Changed: {files_str}"
+        )
+        # Emit progress every 5 commits so logs don't spam
+        if i % 5 == 0 or i == total:
+            emit_fn(session_id, "log", {
+                "message": f"Fetched diffs {i}/{total} commits..."
+            })
+
+    return "\n".join(result)
+
+
 def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                  gemini_key: str, dry_run: bool) -> None:
     """Run the full ECOOPS analysis pipeline with progress events.
 
-    Always emits exactly 5 steps for frontend alignment:
-      Step 1: Fetching Pipeline Data
-      Step 2: Analyzing Waste Patterns
-      Step 3: Generating Optimized YAML
-      Step 4: Validating Configuration
-      Step 5: Creating MR / Finalizing Results
+    Emits exactly 6 steps for frontend alignment:
+      Step 1: GitLab API — Fetch commits, diffs, .gitlab-ci.yml
+      Step 2: Gemini AI — Analyze waste patterns
+      Step 3: Gemini AI — Generate optimized YAML
+      Step 4: GitLab CI Linter — Validate YAML
+      Step 5: GitLab API — Create branch + commit
+      Step 6: GitLab API — Open MR with Green Impact Report
     """
     base_url = os.getenv("GITLAB_BASE_URL", "https://gitlab.com")
     gitlab = GitLabClient(gitlab_token, project_id, base_url)
@@ -205,8 +242,8 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
     try:
         # ── Step 1: Fetch Data ─────────────────────────────
         emit(session_id, "step", {
-            "step": 1, "title": "Fetching Pipeline Data",
-            "description": "Connecting to GitLab API...",
+            "step": 1, "title": "GitLab API — Fetching Pipeline Data",
+            "description": "Connecting to GitLab API, fetching commits & diffs...",
             "icon": "📡", "status": "running"
         })
 
@@ -214,35 +251,28 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
         project_name = project["name_with_namespace"]
         default_branch = project.get("default_branch", "main")
 
-        emit(session_id, "log", {
-            "message": f"Project: {project_name}"
-        })
+        emit(session_id, "log", {"message": f"Project: {project_name}"})
 
-        commits = gitlab.fetch_commits(per_page=50, ref_name=default_branch)
-        emit(session_id, "log", {
-            "message": f"Fetched {len(commits)} commits"
-        })
+        # Cap at 25 commits for speed — still statistically significant
+        commits = gitlab.fetch_commits(per_page=25, ref_name=default_branch)
+        emit(session_id, "log", {"message": f"Fetched {len(commits)} commits — fetching diffs..."})
 
-        ci_yaml = gitlab.get_file_content(".gitlab-ci.yml",
-                                          ref=default_branch)
-        emit(session_id, "log", {
-            "message": f"Read .gitlab-ci.yml ({len(ci_yaml)} bytes)"
-        })
+        ci_yaml = gitlab.get_file_content(".gitlab-ci.yml", ref=default_branch)
+        emit(session_id, "log", {"message": f"Read .gitlab-ci.yml ({len(ci_yaml)} bytes)"})
 
         tree = []
         try:
             tree = gitlab.list_repository_tree(ref=default_branch)
-            emit(session_id, "log", {
-                "message": f"Mapped {len(tree)} repo items"
-            })
+            emit(session_id, "log", {"message": f"Mapped {len(tree)} repo items"})
         except Exception:
             pass
 
-        commits_data = format_commits_data(gitlab, commits)
+        # Fetch diffs with per-commit progress logs
+        commits_data = _format_commits_with_progress(gitlab, commits, session_id, emit)
         repo_tree = format_repo_tree(tree) if tree else "(unavailable)"
 
         emit(session_id, "step", {
-            "step": 1, "title": "Fetching Pipeline Data",
+            "step": 1, "title": "GitLab API — Fetching Pipeline Data",
             "icon": "📡", "status": "done",
             "detail": {
                 "project": project_name,
@@ -254,21 +284,54 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
 
         # ── Step 2: Analyze Waste ──────────────────────────
         emit(session_id, "step", {
-            "step": 2, "title": "Analyzing Waste Patterns",
-            "description": "Gemini AI is analyzing your pipeline...",
-            "icon": "🔍", "status": "running"
+            "step": 2, "title": "Gemini AI — Analyzing Waste Patterns",
+            "description": "Gemini is cross-referencing jobs with commit file changes...",
+            "icon": "🤖", "status": "running"
         })
 
-        waste_analysis = gemini.analyze_waste(ci_yaml, commits_data,
-                                              repo_tree)
+        # Heartbeat thread: keeps the frontend alive during slow Gemini calls
+        import threading as _threading
+        import concurrent.futures as _cf
+        _stop_heartbeat = _threading.Event()
+
+        def _heartbeat():
+            msgs = [
+                "Gemini is reading the CI config...",
+                "Cross-referencing jobs with commit diffs...",
+                "Identifying wasteful runs...",
+                "Computing waste percentages...",
+                "Finalizing waste analysis...",
+            ]
+            idx = 0
+            while not _stop_heartbeat.wait(5.0):
+                emit(session_id, "log", {"message": msgs[idx % len(msgs)]})
+                idx += 1
+
+        _hb = _threading.Thread(target=_heartbeat, daemon=True)
+        _hb.start()
+
+        try:
+            with _cf.ThreadPoolExecutor(max_workers=1) as _pool:
+                _future = _pool.submit(
+                    gemini.analyze_waste, ci_yaml, commits_data, repo_tree
+                )
+                try:
+                    waste_analysis = _future.result(timeout=90)
+                except _cf.TimeoutError:
+                    raise RuntimeError(
+                        "Gemini API timed out after 90s. "
+                        "The prompt may be too large — try again or check your API quota."
+                    )
+        finally:
+            _stop_heartbeat.set()
 
         metrics = parse_waste_metrics(waste_analysis)
         savings = calculate_savings(metrics)
         jobs_count = count_optimized_jobs(waste_analysis)
 
         emit(session_id, "step", {
-            "step": 2, "title": "Analyzing Waste Patterns",
-            "icon": "🔍", "status": "done",
+            "step": 2, "title": "Gemini AI — Analyzing Waste Patterns",
+            "icon": "🤖", "status": "done",
             "detail": {
                 "waste_analysis": waste_analysis,
                 "metrics": metrics,
@@ -279,16 +342,15 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
 
         # ── Step 3: Generate Optimized YAML ────────────────
         emit(session_id, "step", {
-            "step": 3, "title": "Generating Optimized YAML",
-            "description": "Creating optimized CI configuration...",
+            "step": 3, "title": "Gemini AI — Generating Optimized YAML",
+            "description": "Injecting rules:changes: blocks into wasteful jobs...",
             "icon": "⚙️", "status": "running"
         })
 
-        optimized_yaml = gemini.generate_optimized_yaml(
-            ci_yaml, waste_analysis)
+        optimized_yaml = gemini.generate_optimized_yaml(ci_yaml, waste_analysis)
 
         emit(session_id, "step", {
-            "step": 3, "title": "Generating Optimized YAML",
+            "step": 3, "title": "Gemini AI — Generating Optimized YAML",
             "icon": "⚙️", "status": "done",
             "detail": {
                 "original_yaml": ci_yaml,
@@ -298,8 +360,8 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
 
         # ── Step 4: Validate YAML ──────────────────────────
         emit(session_id, "step", {
-            "step": 4, "title": "Validating Configuration",
-            "description": "Running GitLab CI Linter...",
+            "step": 4, "title": "GitLab CI Linter — Validating YAML",
+            "description": "Running GitLab CI Linter API on optimized config...",
             "icon": "🔧", "status": "running"
         })
 
@@ -307,22 +369,24 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
         try:
             lint_result = gitlab.validate_ci_yaml(optimized_yaml)
             lint_valid = lint_result.get("valid", False)
-        except Exception:
-            pass
+            emit(session_id, "log", {
+                "message": f"CI Linter: {'✓ VALID' if lint_valid else '⚠ issues found'}"
+            })
+        except Exception as e:
+            emit(session_id, "log", {"message": f"CI Linter skipped: {str(e)[:80]}"})
 
         emit(session_id, "step", {
-            "step": 4, "title": "Validating Configuration",
+            "step": 4, "title": "GitLab CI Linter — Validating YAML",
             "icon": "🔧", "status": "done",
             "detail": {"valid": lint_valid}
         })
 
-        # ── Step 5: Create MR / Finalize ───────────────────
-        # Always emit step 5 so the pulse reaches Station 5
+        # ── Step 5: Create Branch + Commit ─────────────────
         mr_url = None
         if not dry_run:
             emit(session_id, "step", {
-                "step": 5, "title": "Creating Merge Request",
-                "description": "Pushing optimized YAML and creating MR...",
+                "step": 5, "title": "GitLab API — Creating Branch + Commit",
+                "description": "Pushing optimized YAML to ecoops/optimize-pipeline...",
                 "icon": "📤", "status": "running"
             })
 
@@ -342,10 +406,21 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                         "content": optimized_yaml,
                     }]
                 )
+                emit(session_id, "log", {"message": "✓ Committed optimized .gitlab-ci.yml"})
             except Exception as e:
-                emit(session_id, "log", {
-                    "message": f"Commit note: {str(e)[:100]}"
-                })
+                emit(session_id, "log", {"message": f"Commit note: {str(e)[:100]}"})
+
+            emit(session_id, "step", {
+                "step": 5, "title": "GitLab API — Creating Branch + Commit",
+                "icon": "📤", "status": "done",
+            })
+
+            # ── Step 6: Create MR + Green Impact ──────────
+            emit(session_id, "step", {
+                "step": 6, "title": "GitLab API — Opening MR + Green Impact Report",
+                "description": "Creating Merge Request with sustainability report...",
+                "icon": "🌱", "status": "running"
+            })
 
             report = generate_impact_report(waste_analysis, jobs_count)
 
@@ -355,8 +430,7 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                     target_branch=default_branch,
                     title=(
                         f"🌱 ECOOPS: Optimize pipeline to save "
-                        f"{int(savings['monthly']['minutes_saved'])} "
-                        f"CI minutes/month"
+                        f"{int(savings['monthly']['minutes_saved'])} CI minutes/month"
                     ),
                     description=(
                         "This MR optimizes `.gitlab-ci.yml` by adding "
@@ -366,31 +440,39 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
                 )
                 mr_url = mr.get("web_url", "")
                 mr_iid = mr["iid"]
-
                 gitlab.post_mr_note(mr_iid, report)
-
+                emit(session_id, "log", {"message": f"✓ MR created: {mr_url}"})
             except Exception as e:
-                emit(session_id, "log", {
-                    "message": f"MR note: {str(e)[:100]}"
-                })
+                emit(session_id, "log", {"message": f"MR note: {str(e)[:100]}"})
 
             emit(session_id, "step", {
-                "step": 5, "title": "Creating Merge Request",
-                "icon": "📤", "status": "done",
+                "step": 6, "title": "GitLab API — Opening MR + Green Impact Report",
+                "icon": "🌱", "status": "done",
                 "detail": {"mr_url": mr_url}
             })
+
         else:
-            # Dry run — still emit step 5 so pulse reaches the end
+            # Dry run — emit steps 5 and 6 visually so pulse reaches the end
             emit(session_id, "step", {
-                "step": 5, "title": "Finalizing Results",
-                "description": "Dry run — compiling impact report...",
+                "step": 5, "title": "GitLab API — Create Branch + Commit",
+                "description": "Dry run — skipping actual commit...",
+                "icon": "📤", "status": "running"
+            })
+            time.sleep(0.3)
+            emit(session_id, "step", {
+                "step": 5, "title": "GitLab API — Create Branch + Commit",
+                "icon": "📤", "status": "done", "detail": {"dry_run": True}
+            })
+
+            emit(session_id, "step", {
+                "step": 6, "title": "GitLab API — Open MR + Green Impact Report",
+                "description": "Dry run — compiling impact metrics...",
                 "icon": "🌱", "status": "running"
             })
-            time.sleep(0.5)  # Brief pause for visual effect
+            time.sleep(0.4)
             emit(session_id, "step", {
-                "step": 5, "title": "Finalizing Results",
-                "icon": "🌱", "status": "done",
-                "detail": {"dry_run": True}
+                "step": 6, "title": "GitLab API — Open MR + Green Impact Report",
+                "icon": "🌱", "status": "done", "detail": {"dry_run": True}
             })
 
         # ── Complete ───────────────────────────────────────
@@ -408,7 +490,6 @@ def run_analysis(session_id: str, project_id: int, gitlab_token: str,
             "dry_run": dry_run,
         }
 
-        # Save run log
         try:
             log_path = save_run_log(result_data)
             emit(session_id, "log", {

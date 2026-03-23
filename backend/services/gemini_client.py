@@ -22,6 +22,7 @@ class GeminiClient:
     """Client for interacting with Google Gemini API."""
 
     def __init__(self, api_key: str, model: str = GEMINI_MODEL):
+        logger.error(f"INIT GEMINI CLIENT! Key prefix: {api_key[:10]}... Length: {len(api_key)}")
         self.client = genai.Client(api_key=api_key)
         self.model = model
 

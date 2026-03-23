@@ -5,6 +5,7 @@ import DataHighway from './DataHighway';
 import Section1Rack from './Section1Rack';
 import Section2Scanner from './Section2Scanner';
 import Section3Matrix from './Section3Matrix';
+import Section4Validator from './Section4Validator';
 import Section4Fork from './Section4Fork';
 import Section5Impact from './Section5Impact';
 import TypographySeq from './TypographySeq';
@@ -28,22 +29,23 @@ interface ExperienceProps {
   isAnalyzing?: boolean;
 }
 
-export default function Experience({ metrics, currentStep = 0, totalSteps = 5, isAnalyzing = false }: ExperienceProps) {
+export default function Experience({ metrics, currentStep = 0, isAnalyzing = false }: ExperienceProps) {
   return (
     <ProgressProvider>
       <Environment preset="night" environmentIntensity={0.05} />
       <ambientLight intensity={0.05} />
 
       <ScrollControls pages={SCROLL_PAGES} damping={0.12}>
-        <CameraRig currentStep={currentStep} totalSteps={totalSteps} isAnalyzing={isAnalyzing} />
-        <DataHighway currentStep={currentStep} totalSteps={totalSteps} isAnalyzing={isAnalyzing} />
+        <CameraRig />
+        <DataHighway currentStep={currentStep} isAnalyzing={isAnalyzing} />
 
         <group>
           <Section1Rack />
           <Section2Scanner />
           <Section3Matrix />
+          <Section4Validator />
           <Section4Fork />
-          <Section5Impact metrics={metrics} />
+          <Section5Impact />
         </group>
 
         <Scroll html style={{ width: '100vw' }}>

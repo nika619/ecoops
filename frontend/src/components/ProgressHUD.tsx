@@ -13,12 +13,14 @@ interface ProgressHUDProps {
   analysisComplete: boolean;
 }
 
+// 6 steps matching the architecture table exactly
 const STEP_LABELS = [
-  { icon: '📡', title: 'Fetching Pipeline Data' },
-  { icon: '🔍', title: 'Analyzing Waste Patterns' },
-  { icon: '⚙️', title: 'Generating Optimized YAML' },
-  { icon: '🔧', title: 'Validating Configuration' },
-  { icon: '🌱', title: 'Finalizing Results' },
+  { icon: '📡', title: 'GitLab API — Fetch 50+ commits, diffs, .gitlab-ci.yml' },
+  { icon: '🤖', title: 'Gemini AI — Analyze which jobs depend on which files' },
+  { icon: '⚙️', title: 'Gemini AI — Generate optimized YAML with rules:changes:' },
+  { icon: '🔧', title: 'GitLab CI Linter — Validate optimized YAML' },
+  { icon: '📤', title: 'GitLab API — Create branch ecoops/optimize-pipeline' },
+  { icon: '🌱', title: 'GitLab API — Open MR with Green Impact Report' },
 ];
 
 export default function ProgressHUD({

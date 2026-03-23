@@ -8,16 +8,12 @@ import { STATION_POSITIONS } from '../curveConfig';
  * Station 5: Green Impact — Glowing wireframe tree on podium.
  * Metric cards are now rendered in the HTML overlay (TypographySeq).
  */
-export default function Section5Impact({ metrics }: {
-  metrics?: { minutes_saved: number; cost_reduced: number; energy_kwh: number; co2_kg: number; trees: number };
-}) {
+export default function Section5Impact() {
   const leavesRef = useRef<THREE.Mesh>(null);
   const treeRef = useRef<THREE.Group>(null);
   const ring1Ref = useRef<THREE.Mesh>(null);
   const ring2Ref = useRef<THREE.Mesh>(null);
-  const pos = STATION_POSITIONS[4];
-
-  const data = metrics || { minutes_saved: 1680, cost_reduced: 13.44, energy_kwh: 14.0, co2_kg: 21.77, trees: 1 };
+  const pos = STATION_POSITIONS[5];
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
@@ -37,15 +33,11 @@ export default function Section5Impact({ metrics }: {
 
   return (
     <group position={[pos.x, pos.y, pos.z]}>
-      {/* Hero text */}
-      <Float speed={1.5} floatIntensity={0.3} position={[0, 6, 0]}>
-        <Text fontSize={1.4} color="#00ffcc" anchorX="center" anchorY="middle" outlineWidth={0.05} outlineColor="#003322">
+      {/* Hero text — inside camera view: station at world y=8, camera at y≈12 looking ahead */}
+      <Float speed={1.5} floatIntensity={0.2} position={[0, 3.5, 0]}>
+        <Text fontSize={1.0} color="#00ffcc" anchorX="center" anchorY="middle" outlineWidth={0.04} outlineColor="#003322">
           PIPELINE OPTIMIZED
           <meshBasicMaterial color="#00ffcc" toneMapped={false} />
-        </Text>
-        <Text position={[0, -1, 0]} fontSize={0.3} color="#e3e0f3" anchorX="center">
-          {`${data.minutes_saved.toLocaleString()} Minutes Saved / Month`}
-          <meshBasicMaterial color="#e3e0f3" toneMapped={false} transparent opacity={0.85} />
         </Text>
       </Float>
 

@@ -12,49 +12,53 @@ import { useProgress } from '../ProgressContext';
  */
 interface DataHighwayProps {
   currentStep: number;
-  totalSteps: number;
   isAnalyzing: boolean;
 }
 
-export default function DataHighway({ currentStep, totalSteps, isAnalyzing }: DataHighwayProps) {
+export default function DataHighway({ currentStep, isAnalyzing }: DataHighwayProps) {
   const pulseRef = useRef<THREE.Mesh>(null);
   const pulseGlowRef = useRef<THREE.Mesh>(null);
   const pulseLightRef = useRef<THREE.PointLight>(null);
   const scroll = useScroll();
-  const smoothT = useRef(0);
   const { progressRef } = useProgress();
 
   const tubeGeometry = useMemo(() => new THREE.TubeGeometry(HIGHWAY_CURVE, 256, 0.05, 8, false), []);
   const tubeGlowGeometry = useMemo(() => new THREE.TubeGeometry(HIGHWAY_CURVE, 256, 0.12, 8, false), []);
 
+
+  // Smooth world-space position that the pulse lerps toward
+  const smoothPos = useRef(new THREE.Vector3());
+
   useFrame((state, delta) => {
     if (!pulseRef.current || !pulseGlowRef.current) return;
     const t = state.clock.elapsedTime;
+    const lerpSpeed = Math.min(delta * 2.0, 0.1);
+    const n = STATION_POSITIONS.length; // 6
 
-    // Step-driven target
-    const stepT = (isAnalyzing || currentStep > 0)
-      ? Math.min(currentStep / totalSteps, 1.0)
-      : 0;
+    if (isAnalyzing || currentStep > 0) {
+      // ── Step-driven: lerp DIRECTLY toward the exact station position ──
+      // currentStep goes 1..totalSteps; clamp to valid station index.
+      const idx = Math.min(Math.max(currentStep - 1, 0), n - 1);
+      smoothPos.current.lerp(STATION_POSITIONS[idx], lerpSpeed);
 
-    // Use whichever is further ahead: scroll or step progress
-    const targetT = Math.max(scroll.offset, stepT);
+      // Use uniform param so CameraRig (getPoint) lands at same station
+      progressRef.current = idx / (n - 1);
+    } else {
+      // ── Scroll-driven: use getPoint (uniform=control-point aligned) NOT getPointAt ──
+      // scroll.offset goes 0→1 across SCROLL_PAGES pages.
+      // getPoint(u) puts the ball AT STATION_POSITIONS[k] when u=k/(n-1) ✓
+      const u = Math.max(0, Math.min(scroll.offset, 0.9999));
+      smoothPos.current.lerp(HIGHWAY_CURVE.getPoint(u), lerpSpeed);
+      progressRef.current = u;
+    }
 
-    // Smoothly animate pulse towards target
-    smoothT.current += (targetT - smoothT.current) * Math.min(delta * 1.5, 0.08);
-    const progress = Math.max(0, Math.min(smoothT.current, 0.999));
-
-    // Position pulse on curve
-    const pulsePos = HIGHWAY_CURVE.getPointAt(progress);
-    pulseRef.current.position.copy(pulsePos);
-    pulseGlowRef.current.position.copy(pulsePos);
-    if (pulseLightRef.current) pulseLightRef.current.position.copy(pulsePos);
+    pulseRef.current.position.copy(smoothPos.current);
+    pulseGlowRef.current.position.copy(smoothPos.current);
+    if (pulseLightRef.current) pulseLightRef.current.position.copy(smoothPos.current);
 
     // Pulsing glow
     const s = 1 + Math.sin(t * 5) * 0.3;
     pulseGlowRef.current.scale.setScalar(s);
-
-    // Share progress via context ref (no scene.traverse needed)
-    progressRef.current = progress;
   });
 
   return (

@@ -17,7 +17,7 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [stepTitle, setStepTitle] = useState('');
   const [stepIcon, setStepIcon] = useState('');
-  const totalSteps = 5;
+  const totalSteps = 6;
   const [error, setError] = useState<string | null>(null);
   const [backendReady, setBackendReady] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);

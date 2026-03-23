@@ -11,7 +11,7 @@ import { STATION_POSITIONS } from '../curveConfig';
 export default function Section4Fork() {
   const pulseRef = useRef<THREE.Mesh>(null);
   const scroll = useScroll();
-  const pos = STATION_POSITIONS[3];
+  const pos = STATION_POSITIONS[4];
 
   // Main pipeline (horizontal orange)
   const mainPath = useMemo(() => {
@@ -27,14 +27,32 @@ export default function Section4Fork() {
   }, []);
 
   useFrame((state) => {
-    const progress = scroll.range(0.6, 0.18);
+    // 6-page layout: station 5 (Create Branch) begins at page 4 → offset 4/6≈0.667
+    const progress = scroll.range(0.667, 0.167);
     const t = state.clock.elapsedTime;
 
     if (pulseRef.current) {
-      const idx = Math.min(Math.floor(progress * forkPath.length), forkPath.length - 1);
-      const pt = forkPath[idx];
-      pulseRef.current.position.set(pt.x, pt.y, pt.z);
-      const s = 0.12 + Math.abs(Math.sin(t * 4)) * 0.08;
+      if (progress <= 0) {
+        // Rest at the torus junction (origin of the fork group)
+        pulseRef.current.position.set(0, 0, 0);
+      } else if (progress >= 1) {
+        // Rest at the very end of the fork path (on the circle border / endpoint)
+        const last = forkPath[forkPath.length - 1];
+        pulseRef.current.position.set(last.x, last.y, last.z);
+      } else {
+        // Travel along the fork path
+        const rawIdx = progress * (forkPath.length - 1);
+        const i0 = Math.floor(rawIdx);
+        const i1 = Math.min(i0 + 1, forkPath.length - 1);
+        const frac = rawIdx - i0;
+        const pt = new THREE.Vector3().lerpVectors(forkPath[i0], forkPath[i1], frac);
+        pulseRef.current.position.set(pt.x, pt.y, pt.z);
+      }
+      // Pulse scale: glow brighter when resting at either end
+      const isResting = progress <= 0 || progress >= 1;
+      const glowBase = isResting ? 0.18 : 0.12;
+      const glowAmp  = isResting ? 0.10 : 0.06;
+      const s = glowBase + Math.abs(Math.sin(t * (isResting ? 2.5 : 4))) * glowAmp;
       pulseRef.current.scale.setScalar(s);
     }
   });
@@ -53,9 +71,9 @@ export default function Section4Fork() {
         <meshStandardMaterial color="#331a00" emissive="#fc6d26" emissiveIntensity={1.5} />
       </mesh>
 
-      {/* Junction node (glowing torus) */}
+      {/* Junction node (glowing torus — the socket) */}
       <mesh rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.4, 0.08, 12, 24]} />
+        <torusGeometry args={[0.42, 0.07, 12, 24]} />
         <meshStandardMaterial color="#332200" emissive="#ffaa00" emissiveIntensity={4} />
       </mesh>
 
@@ -67,9 +85,9 @@ export default function Section4Fork() {
         </mesh>
       ))}
 
-      {/* Traveling pulse on fork */}
+      {/* Traveling pulse on fork — sized to fit inside the torus socket (r≈0.38) */}
       <mesh ref={pulseRef}>
-        <sphereGeometry args={[0.2, 8, 8]} />
+        <sphereGeometry args={[0.38, 12, 12]} />
         <meshBasicMaterial color="#ffffff" toneMapped={false} />
       </mesh>
 

@@ -11,13 +11,9 @@ import { useProgress } from '../ProgressContext';
  * Programmatically scrolls the HTML container AND dispatches a scroll event
  * so drei's useScroll hook detects the change.
  */
-interface CameraRigProps {
-  currentStep: number;
-  totalSteps: number;
-  isAnalyzing: boolean;
-}
 
-export default function CameraRig({ currentStep, totalSteps, isAnalyzing }: CameraRigProps) {
+
+export default function CameraRig() {
   const { camera } = useThree();
   const scroll = useScroll();
   const { progressRef } = useProgress();
@@ -32,10 +28,8 @@ export default function CameraRig({ currentStep, totalSteps, isAnalyzing }: Came
   useFrame((_state, delta) => {
     const pulseProgress = progressRef.current;
 
-    // Step-driven target
-    const stepT = (isAnalyzing || currentStep > 0)
-      ? Math.min(currentStep / totalSteps, 1.0)
-      : 0;
+    // Step-driven target: use progressRef written by DataHighway (uniform param 0→1)
+    const stepT = progressRef.current;
 
     const scrollT = scroll.offset;
 
@@ -56,14 +50,14 @@ export default function CameraRig({ currentStep, totalSteps, isAnalyzing }: Came
     cameraT.current += (targetProgress - cameraT.current) * lagSpeed;
     const t = Math.max(0, Math.min(cameraT.current, 0.999));
 
-    // Camera position
-    const curvePoint = HIGHWAY_CURVE.getPointAt(t);
+    // Camera position — use getPoint (uniform param) to match socket/pulse positions
+    const curvePoint = HIGHWAY_CURVE.getPoint(t);
     targetPos.set(curvePoint.x, curvePoint.y + 4, curvePoint.z + 10);
     camera.position.lerp(targetPos, 0.04);
 
     // Look ahead
-    const lookT = Math.min(t + 0.03, 1.0);
-    HIGHWAY_CURVE.getPointAt(lookT, lookTarget);
+    const lookT = Math.min(t + 0.04, 1.0);
+    HIGHWAY_CURVE.getPoint(lookT, lookTarget);
     camera.lookAt(lookTarget);
 
     camera.near = 0.5;
