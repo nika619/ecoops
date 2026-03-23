@@ -39,12 +39,12 @@ This waste translates directly to:
 4. **Create** a Merge Request with the optimized config + full impact analysis
 
 It comes with two interfaces:
-- **🌐 3D Web Dashboard** — An immersive React/Three.js experience with step-by-step pipeline analysis
+- **🌐 Global Matrix 3D Dashboard** — An immersive React/Three.js WebGL experience simulating planetary-scale edge deployments while analyzing your pipeline.
 - **⌨️ CLI** — Single-command analysis for CI integration
 
-### 3D Dashboard Preview
+### Global Matrix 3D Dashboard
 
-![ECOOPS 3D Dashboard](docs/images/dashboard-3d.png)
+![ECOOPS Global Matrix Dashboard](docs/images/global-matrix-dashboard.png)
 
 ---
 
@@ -119,7 +119,7 @@ python -m backend.ecoops --project-id YOUR_PROJECT_ID --dry-run
 python -m backend.ecoops --project-id YOUR_PROJECT_ID --json
 ```
 
-### Run — 3D Web Dashboard
+### Run — Global Matrix 3D Dashboard
 
 ```bash
 # Start the Flask backend
@@ -130,7 +130,12 @@ cd frontend
 npm install
 npm run dev
 # Visit http://localhost:5173
+# Input your GitLab Project ID and click 'LAUNCH 🚀'
 ```
+
+### ☁️ Live Cloud Deployment
+ECOOPS is deployed globally on Google Cloud Run:
+**[https://ecoops-ei3qr7hppq-uc.a.run.app](https://ecoops-ei3qr7hppq-uc.a.run.app)**
 
 ### Run — 2D Web Dashboard
 
@@ -262,16 +267,13 @@ ecoops/
 │
 ├── frontend/                       # 3D React/Three.js dashboard
 │   ├── src/
-│   │   ├── App.tsx                 # Main application component
-│   │   ├── components/
-│   │   │   ├── Experience.tsx      # 3D scene orchestrator
-│   │   │   ├── CameraController.tsx # Animated camera transitions
-│   │   │   ├── DataHighway.tsx     # Data visualization scene
-│   │   │   ├── YamlDiffDisplays.tsx # YAML before/after comparison
-│   │   │   ├── FinalResultsScene.tsx # Impact dashboard scene
-│   │   │   ├── StepCard.tsx        # Step navigation UI
-│   │   │   ├── UIOverlay.tsx       # HUD overlay elements
-│   │   │   └── ActionConsole.tsx   # Console output panel
+│   │   ├── main.tsx                # Theme provider entrypoint
+│   │   ├── App.tsx                 # Legacy dark theme component
+│   │   ├── globalmatrix/           # UI 4: Global Matrix (Active)
+│   │   │   └── GlobalMatrixApp.tsx # 3D WebGL Globe & Edge simulation
+│   │   ├── solarpunk/              # UI 2: Clean-tech light theme
+│   │   ├── telemetry/              # UI 3: Aether Control metrics
+│   │   ├── components/             # Shared UI components
 │   │   └── index.css               # Global styles
 │   └── package.json                # Node.js dependencies
 │
