@@ -48,36 +48,8 @@ _ALLOWED_ORIGINS = os.getenv(
     "http://localhost:5173,http://localhost:5001,https://ecoops-ei3qr7hppq-uc.a.run.app"
 ).split(",")
 
-# ── SPA serving for production (Cloud Run) ──
-# When frontend/dist exists, serve the Vite build from Flask
-_FRONTEND_DIST = os.path.join(_ROOT, "frontend", "dist")
-_FRONTEND_DIST_EXISTS = os.path.isdir(_FRONTEND_DIST)
-
-if _FRONTEND_DIST_EXISTS:
-    @app.route("/")
-    def serve_spa_root():
-        return send_from_directory(_FRONTEND_DIST, "index.html")
-
-    @app.route("/<path:path>")
-    def serve_spa_assets(path):
-        # Never intercept /api/ routes — let Flask handle those
-        if path.startswith("api/"):
-            return jsonify({"error": "Not found"}), 404
-        # Serve actual files from dist, fallback to index.html for SPA routing
-        full_path = os.path.join(_FRONTEND_DIST, path)
-        if os.path.isfile(full_path):
-            return send_from_directory(_FRONTEND_DIST, path)
-        return send_from_directory(_FRONTEND_DIST, "index.html")
-
-
-# ── Voice AI: Gemini API key endpoint ──
-@app.route("/api/gemini-key")
-def gemini_key():
-    """Return the Gemini API key for the Voice AI WebSocket connection."""
-    key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY or "")
-    if not key:
-        return jsonify({"error": "GEMINI_API_KEY not configured"}), 500
-    return jsonify({"key": key})
+# NOTE: SPA serving is handled by serve_vite() below.
+# The /api/gemini-key endpoint is defined as get_gemini_key() below.
 
 
 # ── AudioWorklet: serve pcm-worklet.js with correct MIME type ──
