@@ -204,20 +204,26 @@ def analyze():
 
 @app.route("/api/progress/<session_id>")
 def progress(session_id):
-    """SSE endpoint for live progress updates."""
+    """SSE endpoint for live progress updates.
+
+    Uses a short heartbeat interval (15s) to keep the connection alive
+    on Cloud Run, which drops idle QUIC/HTTP2 streams.
+    """
     def generate():
         q = get_queue(session_id)
         try:
             while True:
                 try:
-                    msg = q.get(timeout=300)
+                    # Short timeout → frequent heartbeats keep Cloud Run happy
+                    msg = q.get(timeout=15)
                     event = msg["event"]
                     data = json.dumps(msg["data"])
                     yield f"event: {event}\ndata: {data}\n\n"
                     if event in ("complete", "error"):
                         break
                 except queue.Empty:
-                    yield "event: ping\ndata: {}\n\n"
+                    # Heartbeat ping to prevent Cloud Run from killing the stream
+                    yield ": keepalive\n\n"
         finally:
             # Clean up the queue to prevent memory leaks
             cleanup_queue(session_id)
@@ -227,6 +233,7 @@ def progress(session_id):
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
         })
 
 

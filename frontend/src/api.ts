@@ -74,7 +74,9 @@ export async function startAnalysis(
   return sessionId;
 }
 
-/** Subscribe to SSE progress stream. Returns a cleanup function. */
+/** Subscribe to SSE progress stream with auto-reconnect.
+ *  Cloud Run's QUIC/HTTP3 can drop SSE streams — this retries up to 3 times.
+ *  Returns a cleanup function. */
 export function subscribeProgress(
   sessionId: string,
   callbacks: {
@@ -84,33 +86,56 @@ export function subscribeProgress(
     onError: (message: string) => void;
   }
 ): () => void {
-  const es = new EventSource(`${API_BASE}/api/progress/${sessionId}`);
+  let es: EventSource | null = null;
+  let retries = 0;
+  const MAX_RETRIES = 3;
+  let done = false; // set when complete/error event received from server
 
-  es.addEventListener('step', (e) => {
-    callbacks.onStep(JSON.parse(e.data));
-  });
+  function connect() {
+    es = new EventSource(`${API_BASE}/api/progress/${sessionId}`);
 
-  es.addEventListener('log', (e) => {
-    const data = JSON.parse(e.data);
-    callbacks.onLog(data.message);
-  });
+    es.addEventListener('step', (e) => {
+      retries = 0; // successful data = reset retry counter
+      callbacks.onStep(JSON.parse(e.data));
+    });
 
-  es.addEventListener('complete', (e) => {
-    callbacks.onComplete(JSON.parse(e.data));
-    es.close();
-  });
-
-  es.addEventListener('error', (e) => {
-    if (e instanceof MessageEvent) {
+    es.addEventListener('log', (e) => {
+      retries = 0;
       const data = JSON.parse(e.data);
-      callbacks.onError(data.message);
-    } else {
-      callbacks.onError('Connection lost');
-    }
-    es.close();
-  });
+      callbacks.onLog(data.message);
+    });
 
-  return () => es.close();
+    es.addEventListener('complete', (e) => {
+      done = true;
+      callbacks.onComplete(JSON.parse(e.data));
+      es?.close();
+    });
+
+    es.addEventListener('error', (e) => {
+      if (e instanceof MessageEvent) {
+        // Server sent an explicit error event
+        done = true;
+        const data = JSON.parse(e.data);
+        callbacks.onError(data.message);
+        es?.close();
+        return;
+      }
+      // Connection dropped (QUIC / network) — try to reconnect
+      es?.close();
+      if (!done && retries < MAX_RETRIES) {
+        retries++;
+        const delay = Math.min(1000 * retries, 3000);
+        console.warn(`[ECOOPS] SSE dropped, reconnecting (${retries}/${MAX_RETRIES}) in ${delay}ms…`);
+        setTimeout(connect, delay);
+      } else if (!done) {
+        callbacks.onError('Connection lost');
+      }
+    });
+  }
+
+  connect();
+
+  return () => { done = true; es?.close(); };
 }
 
 /** Fetch backend config (project ID, API status). */
