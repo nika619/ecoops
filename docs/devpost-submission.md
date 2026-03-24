@@ -4,7 +4,7 @@
 ECOOPS: Emission Cost Optimizer — Operations Pipeline System
 
 ## Short Description
-AI-powered CI/CD sustainability agent that analyzes GitLab pipeline history, identifies wasted compute using Google Gemini, and automatically optimizes `.gitlab-ci.yml` with smart `rules:changes:` blocks — reducing CO₂ emissions, energy usage, and runner costs.
+AI-powered CI/CD sustainability agent that analyzes GitLab pipeline history, identifies wasted compute using Google Gemini, and automatically optimizes `.gitlab-ci.yml` with smart `rules:changes:` blocks — reducing CO₂ emissions, energy usage, and runner costs. Features a real-time **Voice AI assistant** powered by Gemini 2.5 Flash Native Audio and an interactive multi-view dashboard.
 
 ## Category
 🌿 Green Agent Prize — Sustainability in CI/CD
@@ -35,7 +35,7 @@ The Green Impact Report includes:
 - Tree equivalency (for relatability)
 
 It comes with two interfaces:
-- **3D Web Dashboard** — An immersive React/Three.js experience that visualizes each optimization step in 3D space
+- **3D Web Dashboard** — An immersive React/WebGL experience with a holographic globe, 4 interactive views (Network, Telemetry, Arcs, Regions), real-time voice AI powered by **Gemini 2.5 Flash Native Audio**, and a text chat interface
 - **CLI** — A single command for CI integration
 
 ## How We Built It
@@ -46,10 +46,13 @@ It comes with two interfaces:
   - `Reporter` — Green impact calculations using IEA carbon intensity factors and EPA tree absorption rates
   - Real-time SSE (Server-Sent Events) streaming for live progress updates
 
-- **Frontend**: React + Three.js (`@react-three/fiber` + `@react-three/drei`)
-  - 6-step immersive 3D visualization with animated scenes
+- **Frontend**: React + Cobe (WebGL Globe) + TypeScript
+  - 4 interactive dashboard views: Network, Telemetry, Arcs, Regions
   - Live analysis integration via SSE
-  - Glassmorphism UI with cinematic post-processing (Bloom, Vignette)
+  - Glassmorphism UI with cinematic animations
+  - **Voice AI**: Real-time bidirectional audio via Gemini 2.5 Flash Native Audio WebSocket
+  - Always-on listening with barge-in support (interrupt the AI mid-sentence)
+  - AudioWorklet-based 16kHz PCM capture with low-latency processing
 
 - **Agent Design**: Three specialized agents (Pipeline Analyzer, YAML Optimizer, Green Impact Reporter) with defined tool bindings
 
@@ -70,11 +73,13 @@ It comes with two interfaces:
 - Python
 - Flask
 - Google Gemini 2.0 Flash
+- Google Gemini 2.5 Flash Native Audio
 - GitLab REST API v4
 - React
-- Three.js
+- Cobe (WebGL Globe)
 - TypeScript
 - Vite
+- Web Audio API / AudioWorklet
 
 ## Try It Out
 

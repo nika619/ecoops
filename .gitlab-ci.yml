@@ -30,6 +30,6 @@ test_core:
     - pytest tests/ -v --cov=backend --cov-report=term-missing
   rules:
     - changes:
-      - "backend/**/*.py"
-      - "tests/**/*.py"
-      - ".gitlab-ci.yml"
+        - "backend/**/*.py"
+        - "tests/**/*.py"
+        - ".gitlab-ci.yml"

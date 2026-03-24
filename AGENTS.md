@@ -6,10 +6,19 @@
 
 ECOOPS (Emission Cost Optimizer — Operations Pipeline System) is a CI/CD sustainability tool built on the GitLab Duo Agent Platform. It analyzes pipeline history, identifies wasted compute (jobs that run on irrelevant commits), and optimizes `.gitlab-ci.yml` configurations with `rules:changes:` blocks.
 
+The frontend is a React + WebGL (Cobe) dashboard with:
+- **4 interactive views**: Network (globe), Telemetry (metrics), Arcs (optimization flow), Regions (edge nodes)
+- **Voice AI**: Real-time bidirectional voice via Gemini 2.5 Flash Native Audio (`VoiceAgent.ts`)
+- **Chat interface**: Text-based chat with the ECOOPS AI assistant (`ChatBox.tsx`)
+
 ## Repository Layout
 
 - `.gitlab/agents/` — System prompts for each custom agent
 - `.gitlab/flows/` — Flow configuration YAML
+- `backend/` — Flask API and CLI orchestrator
+- `frontend/src/globalmatrix/` — Main dashboard (GlobalMatrixApp.tsx)
+- `frontend/src/voice/` — Voice AI engine (VoiceAgent.ts)
+- `frontend/src/components/` — UI components (VoiceMicButton, ChatBox, ErrorBoundary)
 - `demo/` — Sample project and intentionally wasteful CI for demo purposes
 - `docs/` — Methodology documentation and setup guides
 - `templates/` — Report templates

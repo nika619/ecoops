@@ -1,73 +1,57 @@
-# React + TypeScript + Vite
+# ECOOPS Global Matrix Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> React + TypeScript + Vite — WebGL holographic globe dashboard with voice AI
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **🌍 Interactive Globe** — Cobe-powered WebGL globe with edge node markers and deployment arcs
+- **📊 4 Navigation Views**:
+  - **NETWORK** — 3D globe with deployment controls and edge node status
+  - **TELEMETRY** — Pipeline metrics dashboard (jobs, waste %, monthly/annual projections)
+  - **ARCS** — SVG visualization of CI job → file pattern optimization mappings
+  - **REGIONS** — Edge node detail cards with latency, uptime, CO₂ share
+- **🎤 Voice AI** — Real-time bidirectional voice via Gemini 2.5 Flash Native Audio WebSocket
+  - Always-on listening (no re-clicking the mic)
+  - Barge-in support (interrupt the AI mid-sentence)
+  - AudioWorklet-based 16kHz PCM capture
+- **💬 Chat Interface** — Collapsible text chat panel
+- **📡 Live Analysis** — SSE-powered real-time progress from Flask backend
 
-## React Compiler
+## Architecture
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```
+src/
+├── main.tsx                    # Entry point
+├── globalmatrix/
+│   └── GlobalMatrixApp.tsx     # Main dashboard (globe + tabs + deployment)
+├── voice/
+│   └── VoiceAgent.ts           # Gemini 2.5 Flash Native Audio client
+├── components/
+│   ├── VoiceMicButton.tsx      # Floating mic button with state animations
+│   ├── ChatBox.tsx             # Collapsible chat panel
+│   └── ErrorBoundary.tsx       # React error boundary
+├── api.ts                      # Backend API client (SSE + REST)
+└── index.css                   # Global styles + animations
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+public/
+└── pcm-worklet.js              # AudioWorklet for 16kHz PCM capture
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Setup
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+```bash
+npm install
+npm run dev
+# → http://localhost:5173
+```
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Requires the Flask backend running on port 5001 (`flask --app backend.web_app run --port 5001`).
+
+## Environment Variables
+
+Set in `../.env`:
+```env
+GEMINI_API_KEY=xxx     # Required for voice AI
+GITLAB_TOKEN=xxx       # Required for pipeline analysis
+GITLAB_PROJECT_ID=xxx  # Target project
 ```

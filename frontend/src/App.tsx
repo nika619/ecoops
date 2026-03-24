@@ -5,8 +5,15 @@ import Experience from './components/Experience';
 import ActionDock from './components/ActionDock';
 import ErrorBoundary from './components/ErrorBoundary';
 import ProgressHUD from './components/ProgressHUD';
+import VoiceMicButton from './components/VoiceMicButton';
+import ChatBox from './components/ChatBox';
+import type { ChatMessage } from './components/ChatBox';
+import { VoiceAgent } from './voice/VoiceAgent';
+import type { VoiceState } from './voice/VoiceAgent';
 import { startAnalysis, subscribeProgress, fetchConfig } from './api';
 import type { AnalysisResult, StepEvent } from './api';
+
+const API_BASE = import.meta.env.VITE_API_BASE || (import.meta.env.DEV ? 'http://localhost:5001' : '');
 
 export default function App() {
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
@@ -24,6 +31,11 @@ export default function App() {
   const [showLaunchPanel, setShowLaunchPanel] = useState(true);
   const [panelExpanded, setPanelExpanded] = useState(true);
   const cleanupRef = useRef<(() => void) | null>(null);
+
+  // ── Voice / Chat state ──────────────────────────────
+  const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
+  const voiceAgentRef = useRef<VoiceAgent | null>(null);
 
   // Fetch backend config on mount
   useEffect(() => {
@@ -80,6 +92,55 @@ export default function App() {
   useEffect(() => {
     return () => {
       if (cleanupRef.current) cleanupRef.current();
+    };
+  }, []);
+
+  // ── Voice toggle handler ──────────────────────────────
+  const handleVoiceToggle = useCallback(async () => {
+    if (voiceAgentRef.current && voiceState !== 'idle') {
+      voiceAgentRef.current.stop();
+      voiceAgentRef.current = null;
+      return;
+    }
+
+    try {
+      // Fetch API key from backend
+      const res = await fetch(`${API_BASE}/api/gemini-key`);
+      const data = await res.json();
+      if (!data.key) throw new Error('No Gemini API key');
+
+      const agent = new VoiceAgent(data.key, {
+        onStateChange: (s) => setVoiceState(s),
+        onUserTranscript: (text) => {
+          if (text.trim()) {
+            setChatMessages(prev => [...prev, { role: 'user', text, timestamp: Date.now() }]);
+          }
+        },
+        onAITranscript: (text) => {
+          if (text.trim()) {
+            setChatMessages(prev => [...prev, { role: 'ai', text, timestamp: Date.now() }]);
+          }
+        },
+        onError: (msg) => console.error('[Voice]', msg),
+      });
+
+      voiceAgentRef.current = agent;
+      await agent.start();
+    } catch (err) {
+      console.error('Voice start failed:', err);
+    }
+  }, [voiceState]);
+
+  const handleSendText = useCallback((text: string) => {
+    if (voiceAgentRef.current) {
+      voiceAgentRef.current.sendText(text);
+    }
+  }, []);
+
+  // Cleanup voice on unmount
+  useEffect(() => {
+    return () => {
+      voiceAgentRef.current?.stop();
     };
   }, []);
 
@@ -280,6 +341,16 @@ export default function App() {
           }}
         />
       )}
+
+      {/* ── Voice Mic Button (bottom center) ── */}
+      <VoiceMicButton voiceState={voiceState} onToggle={handleVoiceToggle} />
+
+      {/* ── Chat Box (bottom right) ── */}
+      <ChatBox
+        messages={chatMessages}
+        onSendText={handleSendText}
+        isConnected={voiceState === 'listening' || voiceState === 'speaking'}
+      />
 
       {/* ── 3D WebGL Canvas ── */}
       <ErrorBoundary>

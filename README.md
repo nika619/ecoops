@@ -6,6 +6,7 @@
 
 [![GitLab](https://img.shields.io/badge/GitLab-Powered-orange)](https://gitlab.com)
 [![Gemini AI](https://img.shields.io/badge/Gemini%202.0-AI%20Powered-blue)](https://ai.google.dev/)
+[![Gemini Voice](https://img.shields.io/badge/Gemini%202.5%20Flash-Voice%20AI-purple)](https://ai.google.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Green Agent](https://img.shields.io/badge/🌿-Green%20Agent-brightgreen)](docs/green-impact-methodology.md)
 
@@ -39,8 +40,14 @@ This waste translates directly to:
 4. **Create** a Merge Request with the optimized config + full impact analysis
 
 It comes with two interfaces:
-- **🌐 Global Matrix 3D Dashboard** — An immersive React/Three.js WebGL experience simulating planetary-scale edge deployments while analyzing your pipeline.
+- **🌐 Global Matrix Dashboard** — An immersive React + WebGL (Cobe) experience with a 3D holographic globe, 4 interactive views (Network, Telemetry, Arcs, Regions), and **real-time voice AI** powered by Gemini 2.5 Flash Native Audio.
 - **⌨️ CLI** — Single-command analysis for CI integration
+
+### Key Features
+- **🎤 Voice AI Assistant** — Talk to ECOOPS using natural voice via Gemini 2.5 Flash Native Audio with always-on listening and barge-in support
+- **💬 Chat Interface** — Text-based chat with the ECOOPS AI assistant
+- **🌍 Interactive Navigation** — 4 views: Network (globe), Telemetry (metrics), Arcs (optimization flow), Regions (edge nodes)
+- **📊 Real-time Analysis** — SSE-powered live progress updates during pipeline analysis
 
 ### Global Matrix 3D Dashboard
 
@@ -58,6 +65,8 @@ graph LR
     D --> E["🔧 GitLab CI Linter<br/>Validate YAML"]
     E --> F["📤 GitLab REST API<br/>Create branch + commit"]
     F --> G["🌱 Merge Request<br/>with Green Impact Report"]
+    A --> H["🎤 Gemini 2.5 Flash<br/>Native Audio (Voice AI)"]
+    H --> A
 
     style A fill:#667eea,stroke:#5a67d8,color:#fff
     style B fill:#f6ad55,stroke:#ed8936,color:#fff
@@ -66,6 +75,7 @@ graph LR
     style E fill:#4299e1,stroke:#3182ce,color:#fff
     style F fill:#4299e1,stroke:#3182ce,color:#fff
     style G fill:#68d391,stroke:#48bb78,color:#fff
+    style H fill:#9f7aea,stroke:#805ad5,color:#fff
 ```
 
 ### How It Works
@@ -131,6 +141,9 @@ npm install
 npm run dev
 # Visit http://localhost:5173
 # Input your GitLab Project ID and click 'LAUNCH 🚀'
+# Use the navigation tabs (NETWORK, TELEMETRY, ARCS, REGIONS) to explore views
+# Click the 🎤 mic button to talk to the ECOOPS Voice AI
+# Click the 💬 chat icon to open the text chat
 ```
 
 ### ☁️ Live Cloud Deployment
@@ -270,11 +283,18 @@ ecoops/
 │   │   ├── main.tsx                # Theme provider entrypoint
 │   │   ├── App.tsx                 # Legacy dark theme component
 │   │   ├── globalmatrix/           # UI 4: Global Matrix (Active)
-│   │   │   └── GlobalMatrixApp.tsx # 3D WebGL Globe & Edge simulation
+│   │   │   └── GlobalMatrixApp.tsx # WebGL Globe, Tabs & Edge simulation
+│   │   ├── voice/                  # Voice AI integration
+│   │   │   └── VoiceAgent.ts       # Gemini 2.5 Flash Native Audio client
+│   │   ├── components/             # Shared UI components
+│   │   │   ├── VoiceMicButton.tsx  # Floating mic button with states
+│   │   │   ├── ChatBox.tsx         # Collapsible chat panel
+│   │   │   └── ErrorBoundary.tsx   # React error boundary
 │   │   ├── solarpunk/              # UI 2: Clean-tech light theme
 │   │   ├── telemetry/              # UI 3: Aether Control metrics
-│   │   ├── components/             # Shared UI components
 │   │   └── index.css               # Global styles
+│   ├── public/
+│   │   └── pcm-worklet.js          # AudioWorklet for 16kHz PCM capture
 │   └── package.json                # Node.js dependencies
 │
 ├── templates/

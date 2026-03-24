@@ -44,8 +44,71 @@ app.secret_key = os.getenv("FLASK_SECRET_KEY", os.urandom(24).hex())
 
 # Allowed frontend origins for CORS
 _ALLOWED_ORIGINS = os.getenv(
-    "CORS_ORIGINS", "http://localhost:5173,http://localhost:5001"
+    "CORS_ORIGINS",
+    "http://localhost:5173,http://localhost:5001,https://ecoops-ei3qr7hppq-uc.a.run.app"
 ).split(",")
+
+# ── SPA serving for production (Cloud Run) ──
+# When frontend/dist exists, serve the Vite build from Flask
+_FRONTEND_DIST = os.path.join(_ROOT, "frontend", "dist")
+_FRONTEND_DIST_EXISTS = os.path.isdir(_FRONTEND_DIST)
+
+if _FRONTEND_DIST_EXISTS:
+    @app.route("/")
+    def serve_spa_root():
+        return send_from_directory(_FRONTEND_DIST, "index.html")
+
+    @app.route("/<path:path>")
+    def serve_spa_assets(path):
+        # Never intercept /api/ routes — let Flask handle those
+        if path.startswith("api/"):
+            return jsonify({"error": "Not found"}), 404
+        # Serve actual files from dist, fallback to index.html for SPA routing
+        full_path = os.path.join(_FRONTEND_DIST, path)
+        if os.path.isfile(full_path):
+            return send_from_directory(_FRONTEND_DIST, path)
+        return send_from_directory(_FRONTEND_DIST, "index.html")
+
+
+# ── Voice AI: Gemini API key endpoint ──
+@app.route("/api/gemini-key")
+def gemini_key():
+    """Return the Gemini API key for the Voice AI WebSocket connection."""
+    key = os.getenv("GEMINI_API_KEY", GEMINI_API_KEY or "")
+    if not key:
+        return jsonify({"error": "GEMINI_API_KEY not configured"}), 500
+    return jsonify({"key": key})
+
+
+# ── AudioWorklet: serve pcm-worklet.js with correct MIME type ──
+_PCM_WORKLET_JS = """\
+class PCMProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this._buffer = new Float32Array(1024);
+    this._pos = 0;
+  }
+  process(inputs) {
+    const input = inputs[0];
+    if (!input || !input[0]) return true;
+    const channelData = input[0];
+    for (let i = 0; i < channelData.length; i++) {
+      this._buffer[this._pos++] = channelData[i];
+      if (this._pos >= this._buffer.length) {
+        this.port.postMessage({ pcmChunk: this._buffer.slice() });
+        this._pos = 0;
+      }
+    }
+    return true;
+  }
+}
+registerProcessor('pcm-processor', PCMProcessor);
+"""
+
+@app.route("/pcm-worklet.js")
+def serve_pcm_worklet():
+    """Serve the PCM AudioWorklet processor for voice capture."""
+    return Response(_PCM_WORKLET_JS, mimetype="application/javascript")
 
 
 @app.after_request
@@ -120,6 +183,14 @@ def get_config():
         "has_gitlab_token": bool(GITLAB_TOKEN),
         "has_gemini_key": bool(GEMINI_API_KEY),
     })
+
+
+@app.route("/api/gemini-key", methods=["GET"])
+def get_gemini_key():
+    """Return Gemini API key for frontend Live API WebSocket connection."""
+    if not GEMINI_API_KEY:
+        return jsonify({"error": "GEMINI_API_KEY not configured"}), 400
+    return jsonify({"key": GEMINI_API_KEY})
 
 
 @app.route("/api/analyze", methods=["POST"])
