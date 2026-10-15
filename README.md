@@ -1,5 +1,7 @@
 # ECOOPS 🌱
 
+[![CI](https://github.com/nika619/ecoops/actions/workflows/ci.yml/badge.svg)](https://github.com/nika619/ecoops/actions/workflows/ci.yml)
+
 ### Emission Cost Optimizer — Operations Pipeline System
 
 > **Making CI/CD sustainable, one pipeline at a time.**
