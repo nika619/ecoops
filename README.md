@@ -367,3 +367,8 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
   <em>Emission Cost Optimizer — Operations Pipeline System</em><br/>
   <em>Making CI/CD sustainable, one pipeline at a time.</em>
 </p>
+
+
+---
+
+Built by [Mayank Tiwari](https://github.com/nika619) · [Hire me on Contra](https://contra.com/mayank_tiwari_a4vkcjsh)
